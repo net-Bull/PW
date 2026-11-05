@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{interfaccia/frammenti :: testa(${inc.codice})}"></head>
+<body th:attr="data-adesso=${@fmt.adesso()}">
+<header th:replace="~{interfaccia/frammenti :: barra('incidenti')}"></header>
+<main>
+    <div th:replace="~{interfaccia/frammenti :: messaggi}"></div>
+
+    <div class="testata">
+        <div class="titolo">
+            <div class="codice" th:text="${inc.codice}">INC-2026-0001</div>
+            <h1 th:text="${inc.titolo}">Titolo</h1>
+            <p class="tenue" th:text="${inc.soggetto + ', soggetto ' + #strings.toLowerCase(inc.tipoSoggetto)}">Soggetto</p>
+        </div>
+        <span th:replace="~{interfaccia/frammenti :: stato(${inc.stato.name()})}"></span>
+    </div>
+
+    <!-- Qualificazione da fare -->
+    <div class="foglio" th:if="${inc.stato.name() == 'IN_VALUTAZIONE'}">
+        <p><strong>Significatività da valutare.</strong> Finché non è valutato, l'incidente non ha termini di notifica.</p>
+        <a class="pulsante" th:href="@{/incidenti/{id}/qualificazione(id=${inc.id})}"
+           sec:authorize="hasAnyRole('OPERATORE','APPROVATORE')">Valuta significatività</a>
+    </div>
+    <div class="foglio" th:if="${inc.stato.name() == 'NON_SIGNIFICATIVO'}">
+        <p><strong>Non significativo:</strong> nessun obbligo di notifica. Se emergono elementi nuovi, valuta di nuovo.</p>
+        <a class="pulsante secondario" th:href="@{/incidenti/{id}/qualificazione(id=${inc.id})}"
+           sec:authorize="hasAnyRole('OPERATORE','APPROVATORE')">Valuta di nuovo</a>
+    </div>
+
+    <!-- Sequenza dei termini -->
+    <section th:unless="${#lists.isEmpty(passi)}" aria-labelledby="titolo-termini">
+        <h2 id="titolo-termini">Termini verso il CSIRT Italia</h2>
+        <ol class="sequenza">
+            <li class="conoscenza">
+                <div class="passo-nome">Conoscenza</div>
+                <div class="passo-regola">evidenza di incidente significativo</div>
+                <div class="passo-quando numero" th:text="${@fmt.data(inc.conoscenzaIl)}"></div>
+                <div class="passo-esito tenue piccolo" th:if="${inc.minutiRilevazioneConoscenza != null}"
+                     th:text="${inc.minutiRilevazioneConoscenza + ' min dopo la rilevazione'}"></div>
+            </li>
+            <li th:each="p : ${passi}" th:class="${'termine-' + p.scadenza.stato + (p.corrente ? ' corrente' : '')}"
+                th:title="${p.scadenza.nota}">
+                <div class="passo-nome" th:text="${p.etichetta}">Pre-notifica</div>
+                <div class="passo-regola" th:text="${p.regola}">24 h dalla conoscenza</div>
+                <div class="passo-quando">
+                    <th:block th:if="${p.scadenza.dovutaEntro}">entro <span class="numero" th:text="${@fmt.data(p.scadenza.dovutaEntro)}"></span></th:block>
+                    <span class="tenue" th:unless="${p.scadenza.dovutaEntro}">termine non ancora determinato</span>
+                </div>
+                <span class="conto" th:if="${p.corrente}" th:attr="data-termine=${p.scadenza.dovutaEntro}"
+                      th:text="${@fmt.residuo(p.scadenza.dovutaEntro)}">mancano 3 h</span>
+                <div class="passo-esito" th:switch="${p.scadenza.stato.name()}">
+                    <span th:case="'RISPETTATA'" th:text="'trasmessa ' + ${@fmt.data(p.scadenza.trasmessaIl)}"></span>
+                    <span th:case="'TARDIVA'" th:text="'trasmessa in ritardo ' + ${@fmt.data(p.scadenza.trasmessaIl)}"></span>
+                    <span th:case="'SCADUTA'">scaduta, non trasmessa</span>
+                    <span th:case="'IN_SCADENZA'">in scadenza</span>
+                    <span th:case="'IN_ATTESA'" class="tenue">in attesa</span>
+                    <span th:case="*" class="tenue">da trasmettere</span>
+                </div>
+            </li>
+        </ol>
+        <details class="piccolo">
+            <summary>Come sono calcolati i termini</summary>
+            <p>Termini in ore sull'istante della conoscenza; termini a mesi sul calendario dell'ora italiana.</p>
+            <ul><li th:each="p : ${passi}"><strong th:text="${p.etichetta}"></strong>: <span th:text="${p.scadenza.nota}"></span></li></ul>
+        </details>
+    </section>
+
+    <!-- Documenti -->
+    <section th:unless="${#lists.isEmpty(righe)}" aria-labelledby="titolo-documenti">
+        <h2 id="titolo-documenti">Adempimenti e documenti</h2>
+        <div class="tabella-scorre">
+            <table>
+                <thead><tr><th>Adempimento</th><th>Stato</th><th>Versioni</th><th>Azioni</th></tr></thead>
+                <tbody>
+                <tr th:each="r : ${righe}">
+                    <td>
+                        <strong th:text="${r.a.tipo.etichetta + (r.a.tipo.ripetibile() ? ' n. ' + r.a.progressivo : '')}">Pre-notifica</strong>
+                        <div class="piccolo tenue" th:text="${r.a.tipo.riferimento}">art. 25</div>
+                        <div class="piccolo" th:if="${r.a.riferimentoRichiesta}" th:text="'Richiesta CSIRT: ' + ${r.a.riferimentoRichiesta}"></div>
+                    </td>
+                    <td><span th:replace="~{interfaccia/frammenti :: stato(${r.a.stato.name()})}"></span></td>
+                    <td>
+                        <div th:each="v : ${r.a.versioni}">
+                            <a th:href="@{/documenti/{id}(id=${v.id})}" th:text="'v' + ${v.numero}">v1</a>
+                            <span th:replace="~{interfaccia/frammenti :: stato(${v.stato.name()})}"></span>
+                            <span class="piccolo numero" th:if="${v.trasmessaIl}" th:text="${@fmt.data(v.trasmessaIl)}"></span>
+                            <span class="piccolo tenue" th:if="${v.motivoRettifica}">rettifica</span>
+                        </div>
+                        <span class="tenue piccolo" th:if="${#lists.isEmpty(r.a.versioni)}">nessuna</span>
+                    </td>
+                    <td sec:authorize="hasAnyRole('OPERATORE','APPROVATORE')">
+                        <form th:if="${r.creabile}" th:action="@{/adempimenti/{id}/bozza(id=${r.a.id})}" method="post">
+                            <input type="hidden" name="incidente" th:value="${inc.id}">
+                            <button type="submit">Crea bozza</button>
+                        </form>
+                        <a th:if="${r.aperta}" class="pulsante secondario" th:href="@{/documenti/{id}(id=${r.aperta.id})}"
+                           th:text="${r.aperta.stato.name() == 'BOZZA' ? 'Apri bozza' : 'Apri per approvazione'}">Apri</a>
+                        <details th:if="${r.rettificabile}">
+                            <summary class="piccolo">Rettifica il documento trasmesso</summary>
+                            <form th:action="@{/adempimenti/{id}/rettifica(id=${r.a.id})}" method="post">
+                                <input type="hidden" name="incidente" th:value="${inc.id}">
+                                <div class="campo">
+                                    <label th:for="'motivo-' + ${r.a.id}">Motivo</label>
+                                    <textarea th:id="'motivo-' + ${r.a.id}" name="motivo" maxlength="2000" required></textarea>
+                                </div>
+                                <button type="submit" class="secondario">Apri rettifica</button>
+                            </form>
+                        </details>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Azioni sull'incidente in gestione -->
+    <section th:if="${inGestione}" aria-labelledby="titolo-gestione" sec:authorize="hasAnyRole('OPERATORE','APPROVATORE')">
+        <h2 id="titolo-gestione">Gestione dell'incidente</h2>
+        <div class="griglia">
+            <div>
+                <h3>Riclassificazione</h3>
+                <p class="piccolo" th:unless="${nessunInvio}">Cambia significatività, categorie o voci della tassonomia dopo un
+                    invio. I documenti trasmessi restano immutati; il prossimo invio espone la classificazione prima e dopo.</p>
+                <p class="piccolo" th:if="${nessunInvio}">Nessun documento è ancora partito: se una nuova valutazione esclude
+                    la significatività, l'incidente torna non significativo e nessun termine resta aperto.</p>
+                <a class="pulsante secondario" th:href="@{/incidenti/{id}/riclassificazione(id=${inc.id})}"
+                   th:text="${nessunInvio ? 'Ritorno a non significativo' : 'Riclassifica'}">Riclassifica</a>
+            </div>
+            <div th:if="${inc.conclusioneGestioneIl == null}">
+                <h3>Conclusione della gestione</h3>
+                <form th:action="@{/incidenti/{id}/conclusione(id=${inc.id})}" method="post">
+                    <div class="campo">
+                        <label for="conclusaIl">Gestione conclusa il</label>
+                        <input type="datetime-local" id="conclusaIl" name="conclusaIl" th:value="${adesso}" required>
+                    </div>
+                    <label class="scelta piccolo"><input type="checkbox" name="conferma" value="true" required>
+                        Confermo: la conclusione si registra una sola volta e fissa il termine della relazione finale.</label>
+                    <div class="azioni"><button type="submit" class="secondario">Registra conclusione</button></div>
+                </form>
+            </div>
+            <div th:if="${preNotificaTrasmessa}">
+                <h3>Richiesta del CSIRT Italia</h3>
+                <details>
+                    <summary class="piccolo">Registra una richiesta di relazione intermedia</summary>
+                    <form th:action="@{/incidenti/{id}/richieste-csirt(id=${inc.id})}" method="post">
+                        <div class="campo">
+                            <label for="riferimento">Riferimento della richiesta</label>
+                            <input type="text" id="riferimento" name="riferimento" maxlength="255" required>
+                        </div>
+                        <div class="campo">
+                            <label for="richiestaIl">Ricevuta il</label>
+                            <input type="datetime-local" id="richiestaIl" name="richiestaIl" th:value="${adesso}">
+                        </div>
+                        <div class="campo">
+                            <label for="scadenza">Termine indicato dal CSIRT (se c'è)</label>
+                            <input type="datetime-local" id="scadenza" name="scadenza">
+                        </div>
+                        <button type="submit" class="secondario">Registra richiesta</button>
+                    </form>
+                </details>
+                <form th:if="${mensileDovuta}" th:action="@{/incidenti/{id}/relazioni-mensili(id=${inc.id})}" method="post">
+                    <p class="piccolo">L'incidente è ancora in corso alla data della relazione finale: è dovuta una relazione mensile.</p>
+                    <button type="submit" class="secondario">Apri relazione mensile</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dati -->
+    <section aria-labelledby="titolo-dati">
+        <h2 id="titolo-dati">Dati dell'incidente</h2>
+        <dl class="dati">
+            <dt>Rilevato il</dt><dd th:text="${@fmt.data(inc.rilevatoIl)}"></dd>
+            <dt>Registrato</dt><dd th:text="${@fmt.data(inc.registratoIl) + ' da ' + inc.registratoDa}"></dd>
+            <th:block th:if="${inc.conoscenzaIl}">
+                <dt>Conoscenza</dt>
+                <dd><span th:text="${@fmt.data(inc.conoscenzaIl)}"></span>
+                    <span class="tenue" th:text="${'(registrata da ' + inc.conoscenzaRegistrataDa + ' il ' + @fmt.data(inc.conoscenzaRegistrataIl) + ')'}"></span>
+                    <div th:text="${inc.conoscenzaMotivazione}"></div></dd>
+            </th:block>
+            <dt>Conclusione della gestione</dt>
+            <dd th:text="${inc.conclusioneGestioneIl == null ? 'non registrata' : @fmt.data(inc.conclusioneGestioneIl)}"></dd>
+            <dt>Descrizione</dt><dd th:text="${inc.descrizione}"></dd>
+            <th:block th:if="${inc.ultimaValutazione}" th:with="v=${inc.ultimaValutazione}">
+                <dt>Ultima valutazione</dt>
+                <dd>
+                    <strong th:text="${v.significativo ? 'Significativo' : 'Non significativo'}"></strong>
+                    <span class="tenue" th:text="${'(' + v.servizio + ', soglie ' + v.versioneSoglie + ', ' + @fmt.data(v.eseguitaIl) + ', ' + v.eseguitaDa + ')'}"></span>
+                    <div th:unless="${#lists.isEmpty(v.regoleAttivate)}">Regole del Reg. 2024/2690:
+                        <code th:each="r, s : ${v.regoleAttivate}" th:text="${r} + (${s.last} ? '' : ',')">R1</code></div>
+                    <div th:unless="${#lists.isEmpty(v.categorieIs)}">Categorie ACN:
+                        <code th:each="c, s : ${v.categorieIs}" th:text="${#strings.replace(c, '_', '-')} + (${s.last} ? '' : ',')">IS-3</code></div>
+                </dd>
+            </th:block>
+        </dl>
+    </section>
+
+    <!-- Riclassificazioni -->
+    <section th:unless="${#lists.isEmpty(riclassificazioni)}" aria-labelledby="titolo-riclass">
+        <h2 id="titolo-riclass">Storico delle riclassificazioni</h2>
+        <div class="tabella-scorre">
+            <table>
+                <thead><tr><th>Quando</th><th>Prima</th><th>Dopo</th><th>Motivazione</th><th>Documenti</th></tr></thead>
+                <tbody>
+                <tr th:each="r : ${riclassificazioni}">
+                    <td class="numero"><span th:text="${@fmt.data(r.registrataIl)}"></span><div class="piccolo tenue" th:text="${r.registrataDa}"></div></td>
+                    <td>
+                        <span th:replace="~{interfaccia/frammenti :: stato(${r.statoPrima.name()})}"></span>
+                        <div class="piccolo"><code th:each="c : ${r.categorieIsPrima}" th:text="${#strings.replace(c, '_', '-')} + ' '"></code></div>
+                        <div class="piccolo"><code th:each="c : ${r.vociPrima}" th:text="${c} + ' '"></code></div>
+                    </td>
+                    <td>
+                        <span th:replace="~{interfaccia/frammenti :: stato(${r.statoDopo.name()})}"></span>
+                        <div class="piccolo"><code th:each="c : ${r.categorieIsDopo}" th:text="${#strings.replace(c, '_', '-')} + ' '"></code></div>
+                        <div class="piccolo"><code th:each="c : ${r.vociDopo}" th:text="${c} + ' '"></code></div>
+                    </td>
+                    <td th:text="${r.motivazione}"></td>
+                    <td class="piccolo">
+                        <div th:if="${r.documentoPrimaId}">prima: <a th:href="@{/documenti/{id}(id=${r.documentoPrimaId})}"
+                             th:text="${r.documentoPrimaRiferimento}">ACN-1</a></div>
+                        <div th:if="${r.documentoDopoId}">comunicata da: <a th:href="@{/documenti/{id}(id=${r.documentoDopoId})}"
+                             th:text="${r.documentoDopoRiferimento}">ACN-2</a></div>
+                        <div th:if="${r.documentoPrimaId != null and r.documentoDopoId == null}" class="termine-IN_SCADENZA">da comunicare con il prossimo invio</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Catena -->
+    <section th:if="${catena.documentiTrasmessi > 0}" aria-labelledby="titolo-catena">
+        <h2 id="titolo-catena">Integrità dei documenti trasmessi</h2>
+        <p th:if="${catena.integra}"><strong class="termine-RISPETTATA">Catena integra.</strong>
+            <span th:text="${catena.documentiTrasmessi + (catena.documentiTrasmessi == 1 ? ' documento trasmesso' : ' documenti trasmessi')}"></span>,
+            ciascuno con l'impronta SHA-256 legata a quella del precedente.</p>
+        <p th:unless="${catena.integra}"><strong class="termine-SCADUTA">Catena non integra:</strong> un documento
+            trasmesso è stato alterato dopo l'invio. Le nuove trasmissioni sono bloccate finché non si chiarisce.</p>
+        <div class="tabella-scorre">
+            <table>
+                <thead><tr><th>#</th><th>Documento</th><th>Trasmesso</th><th>Impronta</th><th>Esito</th></tr></thead>
+                <tbody>
+                <tr th:each="a : ${catena.anelli}">
+                    <td class="numero" th:text="${a.posizione}">1</td>
+                    <td><a th:href="@{/documenti/{id}(id=${a.versioneId})}"
+                           th:text="${a.tipo.etichetta + ' v' + a.numero + (a.rettifica ? ' (rettifica)' : '')}">Pre-notifica v1</a>
+                        <div class="piccolo tenue mono" th:text="${a.riferimentoTrasmissione}"></div></td>
+                    <td class="numero" th:text="${@fmt.data(a.trasmessaIl)}"></td>
+                    <td class="mono piccolo" th:text="${@fmt.impronta(a.impronta)}" th:title="${a.impronta}"></td>
+                    <td th:text="${a.contenutoIntegro and a.collegato ? 'integro' : 'alterato'}"
+                        th:class="${a.contenutoIntegro and a.collegato ? 'termine-RISPETTATA' : 'termine-SCADUTA'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Registro -->
+    <section aria-labelledby="titolo-audit">
+        <h2 id="titolo-audit">Registro delle operazioni</h2>
+        <details>
+            <summary th:text="${#lists.size(audit) + ' operazioni registrate'}">operazioni</summary>
+            <div class="tabella-scorre">
+                <table class="piccolo">
+                    <thead><tr><th>Quando</th><th>Utente</th><th>Operazione</th><th>Dettaglio</th></tr></thead>
+                    <tbody>
+                    <tr th:each="a : ${audit}">
+                        <td class="numero" th:text="${@fmt.dataSecondi(a.istante)}"></td>
+                        <td th:text="${a.username}"></td>
+                        <td class="mono" th:text="${a.azione}"></td>
+                        <td th:text="${a.dettaglio}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </section>
+</main>
+</body>
+</html>

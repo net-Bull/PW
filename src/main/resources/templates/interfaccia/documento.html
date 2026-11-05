@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{interfaccia/frammenti :: testa(${d.tipo.etichetta + ' ' + d.incidenteCodice})}"></head>
+<body th:attr="data-adesso=${@fmt.adesso()}">
+<header th:replace="~{interfaccia/frammenti :: barra('incidenti')}"></header>
+<main th:with="bozza=${d.stato.name() == 'BOZZA'}, inApprovazione=${d.stato.name() == 'IN_APPROVAZIONE'}, trasmesso=${d.stato.name() == 'TRASMESSO'}">
+    <div th:replace="~{interfaccia/frammenti :: messaggi}"></div>
+
+    <div class="testata">
+        <div class="titolo">
+            <div class="codice"><a th:href="@{/incidenti/{id}(id=${d.incidenteId})}" th:text="${d.incidenteCodice}">INC</a></div>
+            <h1 th:text="${d.tipo.etichetta + (d.tipo.ripetibile() ? ' n. ' + d.progressivo : '') + ', versione ' + d.numero}">Pre-notifica, versione 1</h1>
+            <p class="tenue" th:text="${d.tipo.riferimento + ', D.Lgs. 138/2024. Tassonomia ' + d.tassonomiaVersione}"></p>
+        </div>
+        <span th:replace="~{interfaccia/frammenti :: stato(${d.stato.name()})}"></span>
+    </div>
+
+    <div class="fascia" th:classappend="${trasmesso} ? 'trasmesso'"
+         th:text="${trasmesso ? 'Trasmesso al CSIRT Italia il ' + @fmt.data(d.trasmessaIl) + ', riferimento ' + d.riferimentoTrasmissione + '. Documento immutabile.'
+                 : (inApprovazione ? 'In approvazione: non ancora trasmesso.' : 'Bozza: non ancora trasmessa.')}">Bozza</div>
+
+    <div class="messaggio" th:if="${d.motivoRettifica}">
+        <strong>Rettifica</strong> della versione trasmessa <a th:href="@{/documenti/{id}(id=${d.derivataDaId})}" th:text="${d.derivataDaId}"></a>:
+        <span th:text="${d.motivoRettifica}"></span>
+    </div>
+    <div class="messaggio errore" th:if="${bozza and d.notaRespingimento != null}">
+        <strong>Respinto dall'approvatore:</strong> <span th:text="${d.notaRespingimento}"></span>
+    </div>
+    <div class="messaggio errore" th:unless="${#lists.isEmpty(d.vociNonRiportate)}">
+        Voci della classificazione precedente non presenti nella tassonomia vigente, non riportate:
+        <code th:each="c : ${d.vociNonRiportate}" th:text="${c} + ' '"></code>
+    </div>
+
+    <div class="editor">
+        <div>
+            <!-- ===== Bozza: editor guidato dalla matrice dei campi ===== -->
+            <form id="editor" th:if="${bozza}" th:action="@{/documenti/{id}(id=${d.id})}" method="post"
+                  th:attr="data-verifica=@{/documenti/{id}/verifica(id=${d.id})}" th:object="${modulo}">
+                <p class="piccolo tenue">Sono mostrati solo i campi previsti per <span th:text="${#strings.toLowerCase(d.tipo.etichetta)}"></span>
+                    (matrice generata dal codice); <span class="obbligatorio">obbligatorio</span>. I campi grigi li compila il sistema dai fatti registrati.</p>
+
+                <th:block th:each="campo : ${campi}">
+                    <div class="campo" th:attr="data-campo=${campo.nome}" th:classappend="${#sets.contains(mancanti, campo.nome)} ? 'manca'"
+                         th:switch="${campo.compilatoDalSistema ? 'sistema' : campo.nome}">
+
+                        <th:block th:case="'sistema'">
+                            <label th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">Campo</label>
+                            <div class="sistema">
+                                <th:block th:replace="~{interfaccia/frammenti :: valore(${d.contenuto}, ${campo.nome})}"></th:block>
+                                <div class="chi">Compilato dal sistema.</div>
+                            </div>
+                        </th:block>
+
+                        <th:block th:case="'serviziImpattati'">
+                            <label th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">Servizi</label>
+                            <div class="gruppo">
+                                <label class="scelta" th:each="s : ${servizi}">
+                                    <input type="checkbox" name="serviziImpattati" th:value="${s}" th:checked="${#lists.contains(modulo.serviziImpattati, s)}">
+                                    <span th:text="${s}">SOC</span></label>
+                                <label for="altriServizi" class="piccolo" style="margin-top:.5rem">Altri servizi, uno per riga</label>
+                                <textarea id="altriServizi" th:field="*{altriServizi}" style="min-height:3rem"></textarea>
+                            </div>
+                        </th:block>
+
+                        <th:block th:case="'attoIllegittimoOMalevolo'">
+                            <label th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">Atto</label>
+                            <div class="in-linea gruppo">
+                                <label class="scelta"><input type="radio" th:field="*{attoIllegittimoOMalevolo}" value="SI"> Sì</label>
+                                <label class="scelta"><input type="radio" th:field="*{attoIllegittimoOMalevolo}" value="NO"> No</label>
+                                <label class="scelta"><input type="radio" th:field="*{attoIllegittimoOMalevolo}" value="NON_NOTO"> Non noto</label>
+                            </div>
+                        </th:block>
+
+                        <th:block th:case="'impattoTransfrontaliero'">
+                            <label th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">Impatto</label>
+                            <div class="in-linea gruppo">
+                                <label class="scelta"><input type="radio" th:field="*{impattoTransfrontaliero}" value="SI"> Sì</label>
+                                <label class="scelta"><input type="radio" th:field="*{impattoTransfrontaliero}" value="NO"> No</label>
+                                <label class="scelta"><input type="radio" th:field="*{impattoTransfrontaliero}" value="NON_NOTO"> Non noto</label>
+                            </div>
+                        </th:block>
+
+                        <th:block th:case="'utentiImpattati'">
+                            <label for="utentiImpattati" th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">Utenti</label>
+                            <input type="number" min="0" id="utentiImpattati" th:field="*{utentiImpattati}" style="max-width:12rem">
+                        </th:block>
+
+                        <th:block th:case="'indicatoriCompromissione'">
+                            <label for="indicatori" th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">IoC</label>
+                            <textarea id="indicatori" th:field="*{indicatori}" class="mono" placeholder="ipv4 | 203.0.113.7 | server di comando"></textarea>
+                        </th:block>
+
+                        <th:block th:case="'referenteEmail'">
+                            <label for="referenteEmail" th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">E-mail</label>
+                            <input type="email" id="referenteEmail" th:field="*{referenteEmail}">
+                        </th:block>
+
+                        <th:block th:case="'referenteTelefono'">
+                            <label for="referenteTelefono" th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">Telefono</label>
+                            <input type="tel" id="referenteTelefono" th:field="*{referenteTelefono}">
+                        </th:block>
+
+                        <th:block th:case="'referenteNome'">
+                            <label for="referenteNome" th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">Nome</label>
+                            <input type="text" id="referenteNome" th:field="*{referenteNome}">
+                        </th:block>
+
+                        <th:block th:case="'descrizioneSintetica'">
+                            <label for="descrizioneSintetica" th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">Descrizione</label>
+                            <input type="text" id="descrizioneSintetica" th:field="*{descrizioneSintetica}">
+                        </th:block>
+
+                        <!-- Campi di testo lungo -->
+                        <th:block th:case="*">
+                            <label th:for="${campo.nome}" th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">Testo</label>
+                            <textarea th:id="${campo.nome}" th:name="${campo.nome}" th:text="${modulo['__${campo.nome}__']}"></textarea>
+                        </th:block>
+
+                        <div class="aiuto" th:text="${campo.fonte}">art. 25</div>
+                    </div>
+                </th:block>
+
+                <h2>Classificazione secondo la tassonomia ACN</h2>
+                <p class="piccolo tenue" th:if="${d.verifica != null}">Solo i valori classificabili (ultimo livello dell'albero).
+                    Dopo la notifica le voci devono coincidere con la classificazione comunicata: per cambiarle serve la riclassificazione.</p>
+                <div th:replace="~{interfaccia/frammenti :: voci(${valori}, ${selezionate}, true)}"></div>
+
+                <div class="azioni" sec:authorize="hasAnyRole('OPERATORE','APPROVATORE')">
+                    <button type="submit" name="poi" value="salva" class="secondario">Salva bozza</button>
+                    <button type="submit" name="poi" value="invia">Salva e invia in approvazione</button>
+                </div>
+            </form>
+
+            <!-- ===== In approvazione o trasmesso: sola lettura ===== -->
+            <div th:unless="${bozza}">
+                <dl class="dati foglio">
+                    <th:block th:each="campo : ${campi}">
+                        <dt th:text="${campo.etichetta}" th:classappend="${campo.obbligatorio} ? 'obbligatorio'">Campo</dt>
+                        <dd><th:block th:replace="~{interfaccia/frammenti :: valore(${d.contenuto}, ${campo.nome})}"></th:block></dd>
+                    </th:block>
+                    <dt>Classificazione</dt>
+                    <dd><div th:each="v : ${d.voci}"><code th:text="${v.codice}"></code> <span th:text="${v.nome}"></span></div></dd>
+                </dl>
+
+                <!-- Approvazione: quattro occhi -->
+                <div class="foglio" th:if="${inApprovazione}" sec:authorize="hasRole('APPROVATORE')">
+                    <h3>Approvazione</h3>
+                    <p class="messaggio errore" th:if="${sonoAutore or hoInviato}">Hai scritto o inviato questa versione: per il
+                        principio dei quattro occhi la trasmissione la registra un altro approvatore. Puoi respingerla.</p>
+                    <form th:unless="${sonoAutore or hoInviato}" th:action="@{/documenti/{id}/trasmissione(id=${d.id})}" method="post">
+                        <p class="piccolo">Invia il documento dal portale ACN (Servizi NIS), poi registra qui il riferimento ricevuto.
+                            La versione viene sigillata con l'impronta SHA-256 e non si modifica più.</p>
+                        <div class="griglia">
+                            <div class="campo">
+                                <label for="riferimentoTrasmissione" class="obbligatorio">Riferimento del portale ACN</label>
+                                <input type="text" id="riferimentoTrasmissione" name="riferimento" maxlength="255" required>
+                            </div>
+                            <div class="campo">
+                                <label for="trasmessaIl">Trasmessa il</label>
+                                <input type="datetime-local" id="trasmessaIl" name="trasmessaIl" th:value="${adesso}">
+                            </div>
+                        </div>
+                        <label class="scelta"><input type="checkbox" name="conferma" value="true" required>
+                            Confermo che il documento è stato inviato al CSIRT Italia.</label>
+                        <div class="azioni"><button type="submit">Registra trasmissione</button></div>
+                    </form>
+                    <details style="margin-top:1rem">
+                        <summary>Respingi all'operatore</summary>
+                        <form th:action="@{/documenti/{id}/respingimento(id=${d.id})}" method="post">
+                            <div class="campo">
+                                <label for="nota" class="obbligatorio">Cosa va corretto</label>
+                                <textarea id="nota" name="nota" maxlength="2000" required></textarea>
+                            </div>
+                            <button type="submit" class="pericolo">Respingi</button>
+                        </form>
+                    </details>
+                </div>
+                <div class="foglio" th:if="${inApprovazione}" sec:authorize="!hasRole('APPROVATORE')">
+                    <p>In attesa dell'approvatore, che può registrare la trasmissione o respingere la versione.</p>
+                </div>
+
+                <!-- Intestazione sigillata e impronte -->
+                <div class="foglio" th:if="${trasmesso}">
+                    <h3>Sigillo della trasmissione</h3>
+                    <dl class="dati">
+                        <dt>Stato dell'incidente all'invio</dt>
+                        <dd><span th:replace="~{interfaccia/frammenti :: stato(${esportato.incidente.stato.name()})}"></span></dd>
+                        <dt>Soggetto all'invio</dt><dd th:text="${esportato.soggetto.denominazione + ' (' + esportato.soggetto.codiceFiscale + ')'}"></dd>
+                        <dt>Approvata da</dt><dd th:text="${d.approvataDa}"></dd>
+                        <dt>Registrata il</dt><dd th:text="${@fmt.dataSecondi(d.trasmissioneRegistrataIl)}"></dd>
+                        <dt>Impronta SHA-256</dt><dd class="mono piccolo" th:text="${d.improntaSha256}"></dd>
+                        <dt>Anello precedente</dt><dd class="mono piccolo" th:text="${d.improntaPrecedente}"></dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Pannello laterale ===== -->
+        <aside class="pannello" aria-label="Verifica e documenti">
+            <h3>Completezza</h3>
+            <div id="esito-verifica" aria-live="polite">
+                <p class="completo" th:if="${d.verifica.completo}">Completo per l'adempimento.</p>
+                <th:block th:unless="${d.verifica.completo}">
+                    <p class="incompleto" th:text="${'Mancano ' + #lists.size(d.verifica.violazioni) + (#lists.size(d.verifica.violazioni) == 1 ? ' elemento:' : ' elementi:')}"></p>
+                    <ul><li th:each="v : ${d.verifica.violazioni}" th:text="${v.etichetta}"></li></ul>
+                </th:block>
+            </div>
+            <p class="piccolo tenue" th:if="${bozza}">La verifica si aggiorna mentre scrivi; si salva solo con i pulsanti.</p>
+
+            <h3>Documenti</h3>
+            <p class="piccolo">
+                <a th:href="@{/documenti/{id}/anteprima(id=${d.id})}" target="_blank" rel="noopener">Anteprima di stampa</a><br>
+                <a th:href="@{/documenti/{id}/pdf(id=${d.id})}">Scarica PDF/A</a><br>
+                <a th:href="@{/documenti/{id}/json(id=${d.id})}">Scarica JSON</a>
+            </p>
+
+            <h3>Autori</h3>
+            <p class="piccolo">
+                <span th:text="${'Creata da ' + d.creataDa + ' il ' + @fmt.data(d.creataIl)}"></span><br>
+                <span th:if="${d.modificataDa}" th:text="${'Modificata da ' + d.modificataDa + ' il ' + @fmt.data(d.modificataIl)}"></span><br th:if="${d.modificataDa}">
+                <span th:if="${d.inviataApprovazioneDa}" th:text="${'Inviata in approvazione da ' + d.inviataApprovazioneDa}"></span><br th:if="${d.inviataApprovazioneDa}">
+                <span th:unless="${#lists.isEmpty(d.autori)}" th:text="${'Autori del testo: ' + #strings.listJoin(d.autori, ', ')}"></span>
+            </p>
+        </aside>
+    </div>
+</main>
+</body>
+</html>

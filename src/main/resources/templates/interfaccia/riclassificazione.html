@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{interfaccia/frammenti :: testa('Riclassificazione')}"></head>
+<body th:attr="data-adesso=${@fmt.adesso()}">
+<header th:replace="~{interfaccia/frammenti :: barra('incidenti')}"></header>
+<main>
+    <div th:replace="~{interfaccia/frammenti :: messaggi}"></div>
+    <div class="testata">
+        <div class="titolo">
+            <div class="codice"><a th:href="@{/incidenti/{id}(id=${inc.id})}" th:text="${inc.codice}">INC</a></div>
+            <h1 th:text="${ultimo == null ? 'Ritorno a non significativo' : 'Riclassificazione'}">Riclassificazione</h1>
+            <p th:text="${inc.titolo}">Titolo</p>
+        </div>
+        <span th:replace="~{interfaccia/frammenti :: stato(${inc.stato.name()})}"></span>
+    </div>
+
+    <!-- Prima del primo invio: solo il ritorno a non significativo, con una nuova valutazione -->
+    <form class="foglio" th:if="${ultimo == null}" th:action="@{/incidenti/{id}/riclassificazione(id=${inc.id})}" method="post">
+        <input type="hidden" name="primaDelPrimoInvio" value="true">
+        <p>Nessun documento è stato trasmesso. Prima del primo invio categorie e voci si correggono nella bozza; qui si
+            registra solo una nuova valutazione che <strong>esclude</strong> la significatività. Se la conferma, la
+            richiesta è respinta e i termini restano quelli in corso.</p>
+        <div th:replace="~{interfaccia/frammenti :: valutazione(${valutazione}, ${servizi})}"></div>
+        <div class="campo">
+            <label for="motivazione" class="obbligatorio">Motivazione</label>
+            <textarea id="motivazione" name="motivazione" maxlength="2000" required th:text="${motivazione}"></textarea>
+        </div>
+        <div class="azioni">
+            <button type="submit">Registra la nuova valutazione</button>
+            <a th:href="@{/incidenti/{id}(id=${inc.id})}">Annulla</a>
+        </div>
+    </form>
+
+    <!-- Dopo un invio: riclassificazione tardiva -->
+    <form th:if="${ultimo != null}" th:action="@{/incidenti/{id}/riclassificazione(id=${inc.id})}" method="post">
+        <div class="foglio">
+            <p>L'ultimo documento trasmesso è del <strong th:text="${@fmt.data(ultimo.trasmessaIl)}"></strong>
+                (<a th:href="@{/documenti/{id}(id=${ultimo.id})}">versione <span th:text="${ultimo.id}"></span></a>) e resta
+                immutato. La riclassificazione si registra con la classificazione prima e dopo, il momento e la motivazione;
+                il prossimo documento la comunica al CSIRT Italia, la relazione finale la espone.</p>
+            <p class="piccolo">Classificazione corrente:
+                <code th:each="c : ${vociCorrenti}" th:text="${c} + ' '"></code></p>
+        </div>
+
+        <h2>Nuove voci della tassonomia</h2>
+        <p class="piccolo tenue">Indica la classificazione completa dopo il cambiamento, anche le voci che restano.</p>
+        <div th:replace="~{interfaccia/frammenti :: voci(${valori}, ${selezionate}, true)}"></div>
+
+        <h2>Significatività</h2>
+        <label class="scelta"><input type="checkbox" id="nuova-valutazione" name="nuovaValutazione" value="true"
+                                     th:checked="${nuovaValutazione}">
+            Registra una nuova valutazione (cambia significatività o categorie IS)</label>
+        <div id="blocco-valutazione" class="foglio">
+            <p class="piccolo">Con le soglie vigenti alla data della conoscenza. Se nessun criterio scatta più, l'incidente è
+                declassato: gli obblighi già sorti restano e la relazione finale chiude la gestione.</p>
+            <div th:replace="~{interfaccia/frammenti :: valutazione(${valutazione}, ${servizi})}"></div>
+        </div>
+
+        <h2>Motivazione</h2>
+        <div class="campo">
+            <label for="motivazione2" class="obbligatorio">Perché cambia la classificazione</label>
+            <textarea id="motivazione2" name="motivazione" maxlength="2000" required th:text="${motivazione}"
+                      placeholder="es. l'analisi forense ha accertato cifratura ransomware dell'hypervisor ed esfiltrazione di log"></textarea>
+        </div>
+        <div class="azioni">
+            <button type="submit">Registra riclassificazione</button>
+            <a th:href="@{/incidenti/{id}(id=${inc.id})}">Annulla</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

@@ -1,0 +1,249 @@
+/*
+ * Interfaccia PW 29. Stessa identità dei documenti stampati (ADR-0008): Liberation Sans per il testo,
+ * Liberation Mono per codici e impronte, inchiostro nero su carta bianca. Il colore ha solo tre usi:
+ * il blu istituzionale per le azioni, il rosso per ciò che non è ancora trasmesso o è scaduto (come la fascia
+ * dei PDF), l'ambra e il verde per lo stato dei termini.
+ */
+@font-face { font-family: "Liberation Sans"; src: url("/fonti/LiberationSans-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Liberation Sans"; src: url("/fonti/LiberationSans-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Liberation Mono"; src: url("/fonti/LiberationMono-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+
+:root {
+    --carta: #ffffff;
+    --fondo: #f1f2f4;
+    --inchiostro: #1a1d21;
+    --grigio: #59616c;
+    --filetto: #cfd4da;
+    --filetto-forte: #9aa2ab;
+    --azione: #1f4e79;
+    --azione-scura: #163a5c;
+    --rosso: #a3221a;
+    --rosso-fondo: #fbeceb;
+    --ambra: #8a5300;
+    --ambra-fondo: #fdf3e2;
+    --verde: #1e6b40;
+    --verde-fondo: #e8f4ec;
+    --testo: "Liberation Sans", Arial, Helvetica, sans-serif;
+    --mono: "Liberation Mono", "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+html { font-size: 15px; -webkit-text-size-adjust: 100%; }
+body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--inchiostro);
+    font-family: var(--testo);
+    line-height: 1.5;
+}
+a { color: var(--azione); }
+a:hover { color: var(--azione-scura); }
+:focus-visible { outline: 3px solid var(--azione); outline-offset: 2px; }
+.mono, code { font-family: var(--mono); font-size: 0.92em; }
+.tenue { color: var(--grigio); }
+.piccolo { font-size: 0.867rem; }
+p { margin: 0 0 0.75rem; max-width: 72ch; }
+
+/* --- Barra ----------------------------------------------------------------------------------- */
+.barra {
+    background: var(--carta);
+    border-bottom: 1px solid var(--filetto);
+}
+.barra-interna {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0.6rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+}
+.marchio { font-weight: 700; text-decoration: none; color: var(--inchiostro); }
+.marchio span { font-weight: 400; color: var(--grigio); }
+.barra nav { display: flex; gap: 1.25rem; }
+.barra nav a { text-decoration: none; color: var(--inchiostro); padding: 0.25rem 0; border-bottom: 2px solid transparent; }
+.barra nav a[aria-current="page"] { border-bottom-color: var(--inchiostro); }
+.utente { margin-left: auto; display: flex; align-items: center; gap: 0.75rem; font-size: 0.933rem; }
+.utente form { margin: 0; }
+
+/* --- Pagina ---------------------------------------------------------------------------------- */
+main { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+h1 { font-size: 1.733rem; line-height: 1.2; margin: 0 0 0.25rem; }
+h2 { font-size: 1.2rem; margin: 2.25rem 0 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--filetto); }
+h3 { font-size: 1rem; margin: 1.25rem 0 0.5rem; }
+.testata { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.75rem 1.5rem; margin-bottom: 1.25rem; }
+.testata .titolo { flex: 1 1 28rem; }
+.codice { font-family: var(--mono); color: var(--grigio); font-size: 0.933rem; }
+.foglio { background: var(--carta); border: 1px solid var(--filetto); padding: 1.25rem 1.5rem; }
+.foglio + .foglio { margin-top: 1rem; }
+
+/* --- Messaggi -------------------------------------------------------------------------------- */
+.messaggio { border-left: 4px solid; padding: 0.6rem 0.9rem; margin: 0 0 1.25rem; background: var(--carta); }
+.messaggio.conferma { border-color: var(--verde); }
+.messaggio.errore { border-color: var(--rosso); background: var(--rosso-fondo); }
+.messaggio ul { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+
+/* --- Stati ----------------------------------------------------------------------------------- */
+.stato {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.1rem 0.45rem;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+}
+.stato-IN_VALUTAZIONE, .stato-NON_SIGNIFICATIVO, .stato-CHIUSO { color: var(--grigio); }
+.stato-SIGNIFICATIVO { color: var(--inchiostro); background: var(--carta); }
+.stato-DECLASSATO { color: var(--ambra); }
+.stato-BOZZA, .stato-IN_APPROVAZIONE, .stato-DA_REDIGERE, .stato-IN_LAVORAZIONE { color: var(--rosso); }
+.stato-TRASMESSO { color: var(--inchiostro); }
+.termine-SCADUTA, .termine-TARDIVA { color: var(--rosso); }
+.termine-IN_SCADENZA { color: var(--ambra); }
+.termine-RISPETTATA { color: var(--verde); }
+.termine-APERTA, .termine-IN_ATTESA { color: var(--grigio); }
+
+/* --- Sequenza dei termini: l'elemento che conta di più -------------------------------------- */
+.sequenza {
+    list-style: none;
+    margin: 0 0 0.5rem;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+    background: var(--carta);
+    border: 1px solid var(--filetto);
+}
+.sequenza li {
+    padding: 0.9rem 1rem 1rem;
+    border-top: 6px solid var(--filetto);
+    border-right: 1px solid var(--filetto);
+    position: relative;
+    min-width: 0;
+}
+.sequenza li:last-child { border-right: 0; }
+.sequenza .passo-nome { font-weight: 700; }
+.sequenza .passo-regola { font-size: 0.8rem; color: var(--grigio); }
+.sequenza .passo-quando { margin-top: 0.6rem; font-variant-numeric: tabular-nums; }
+.sequenza .passo-esito { font-size: 0.867rem; font-weight: 700; }
+.sequenza li.conoscenza { border-top-color: var(--inchiostro); }
+.sequenza li.termine-RISPETTATA { border-top-color: var(--verde); }
+.sequenza li.termine-TARDIVA, .sequenza li.termine-SCADUTA { border-top-color: var(--rosso); }
+.sequenza li.termine-IN_SCADENZA { border-top-color: var(--ambra); }
+.sequenza li.termine-APERTA { border-top-color: var(--filetto-forte); }
+.sequenza li.corrente { background: #f7f8fa; }
+.sequenza li.corrente .conto {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.15;
+    margin-top: 0.15rem;
+    font-variant-numeric: tabular-nums;
+}
+.sequenza li.corrente.termine-SCADUTA .conto { color: var(--rosso); }
+.sequenza li.corrente.termine-IN_SCADENZA .conto { color: var(--ambra); }
+.sequenza li .passo-nome, .sequenza li .passo-regola, .sequenza li .passo-quando { color: inherit; }
+.sequenza li { color: var(--inchiostro); }
+
+/* --- Tabelle --------------------------------------------------------------------------------- */
+.tabella-scorre { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: var(--carta); font-size: 0.933rem; }
+th, td { text-align: left; vertical-align: top; padding: 0.5rem 0.65rem; border-bottom: 1px solid var(--filetto); }
+th { font-weight: 700; border-bottom: 2px solid var(--inchiostro); white-space: nowrap; }
+tbody tr:hover { background: #f8f9fa; }
+td.numero { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dati { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1.25rem; margin: 0; }
+.dati dt { color: var(--grigio); }
+.dati dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.vuoto { padding: 2rem 1.5rem; background: var(--carta); border: 1px dashed var(--filetto-forte); }
+
+/* --- Moduli ---------------------------------------------------------------------------------- */
+label { display: block; font-weight: 700; margin-bottom: 0.25rem; }
+.campo { margin-bottom: 1.1rem; max-width: 46rem; }
+.campo .aiuto { font-size: 0.8rem; color: var(--grigio); margin-top: 0.25rem; }
+.campo.manca > label::after { content: " (da compilare)"; color: var(--rosso); font-weight: 400; }
+.campo.manca input, .campo.manca textarea, .campo.manca .gruppo { border-color: var(--rosso); }
+.obbligatorio::after { content: " *"; color: var(--rosso); }
+input[type=text], input[type=email], input[type=tel], input[type=number], input[type=password],
+input[type=datetime-local], input[type=search], select, textarea {
+    font: inherit;
+    width: 100%;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid var(--filetto-forte);
+    border-radius: 2px;
+    background: var(--carta);
+    color: inherit;
+}
+textarea { min-height: 5.5rem; resize: vertical; }
+input[readonly], textarea[readonly] { background: var(--fondo); }
+.gruppo { border: 1px solid var(--filetto); padding: 0.5rem 0.75rem; background: var(--carta); }
+.scelta { display: flex; align-items: flex-start; gap: 0.5rem; font-weight: 400; margin: 0.2rem 0; }
+.scelta input { margin-top: 0.3rem; }
+.in-linea { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0 1.25rem; }
+fieldset { border: 1px solid var(--filetto); padding: 0.75rem 1rem 0.25rem; margin: 0 0 1.25rem; background: var(--carta); }
+legend { font-weight: 700; padding: 0 0.35rem; }
+.sistema { background: var(--fondo); border: 1px solid var(--filetto); padding: 0.6rem 0.8rem; }
+.sistema .chi { font-size: 0.8rem; color: var(--grigio); }
+
+.pulsante, button {
+    font: inherit;
+    font-weight: 700;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--azione);
+    border-radius: 2px;
+    background: var(--azione);
+    color: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1.3;
+}
+.pulsante:hover, button:hover { background: var(--azione-scura); border-color: var(--azione-scura); color: #fff; }
+.pulsante.secondario, button.secondario { background: var(--carta); color: var(--azione); }
+.pulsante.secondario:hover, button.secondario:hover { background: #eef3f8; color: var(--azione-scura); }
+button.pericolo { background: var(--rosso); border-color: var(--rosso); }
+button.pericolo:hover { background: #7f1a14; border-color: #7f1a14; }
+button.collegamento { background: none; border: 0; color: var(--azione); padding: 0; font-weight: 400; text-decoration: underline; }
+.azioni { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-top: 1rem; }
+form.in-linea-azione { display: inline; }
+
+/* --- Editor ---------------------------------------------------------------------------------- */
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; gap: 1.5rem; align-items: start; }
+.pannello { position: sticky; top: 1rem; background: var(--carta); border: 1px solid var(--filetto); padding: 1rem; }
+.pannello h3 { margin-top: 0; }
+.pannello ul { margin: 0.25rem 0 0; padding-left: 1.1rem; font-size: 0.9rem; }
+.pannello .completo { color: var(--verde); font-weight: 700; }
+.pannello .incompleto { color: var(--rosso); font-weight: 700; }
+.fascia { padding: 0.35rem 0.8rem; font-weight: 700; margin-bottom: 1rem; border: 1px solid var(--rosso); color: var(--rosso); background: var(--carta); }
+.fascia.trasmesso { border-color: var(--inchiostro); color: var(--inchiostro); }
+
+/* --- Selettore delle voci della tassonomia --------------------------------------------------- */
+.voci { border: 1px solid var(--filetto); background: var(--carta); }
+.voci-testa { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--filetto); }
+.voci-testa input { max-width: 22rem; }
+.voci-elenco { max-height: 26rem; overflow-y: auto; padding: 0.25rem 0.75rem 0.75rem; }
+.voci details { border-bottom: 1px solid var(--filetto); }
+.voci summary { cursor: pointer; padding: 0.5rem 0; font-weight: 700; }
+.voci .predicato { margin: 0.4rem 0 0.2rem; font-size: 0.8rem; color: var(--grigio); }
+.voci .scelta code { color: var(--grigio); }
+.scelte-correnti { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.scelte-correnti code { border: 1px solid var(--filetto-forte); padding: 0 0.3rem; background: var(--carta); }
+
+/* --- Accesso --------------------------------------------------------------------------------- */
+.accesso { max-width: 26rem; margin: 10vh auto 0; }
+.accesso .foglio { padding: 1.75rem; }
+.accesso h1 { font-size: 1.4rem; }
+
+@media (max-width: 860px) {
+    .editor { grid-template-columns: 1fr; }
+    .pannello { position: static; order: -1; }
+    .dati { grid-template-columns: 1fr; }
+    .dati dt { margin-top: 0.4rem; }
+    .utente { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; scroll-behavior: auto !important; }
+}
+@media print {
+    .barra, .azioni, form, .pannello { display: none !important; }
+    body { background: #fff; }
+}

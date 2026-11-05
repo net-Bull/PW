@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="testa(titolo)">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:if="${_csrf}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf}" th:content="${_csrf.headerName}">
+    <title th:text="${titolo} + ' | Notifiche CSIRT'">Notifiche CSIRT</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+
+<header class="barra" th:fragment="barra(sezione)">
+    <div class="barra-interna">
+        <a class="marchio" th:href="@{/incidenti}">Notifiche CSIRT <span>CyberWall S.r.l.</span></a>
+        <nav aria-label="Sezioni">
+            <a th:href="@{/incidenti}" th:attr="aria-current=${sezione == 'incidenti'} ? 'page' : null">Incidenti</a>
+            <a th:href="@{/incidenti/nuovo}" th:attr="aria-current=${sezione == 'nuovo'} ? 'page' : null"
+               sec:authorize="hasAnyRole('OPERATORE','APPROVATORE')">Registra incidente</a>
+        </nav>
+        <div class="utente">
+            <span>
+                <strong sec:authentication="name">utente</strong>
+                <span class="tenue" sec:authorize="hasRole('APPROVATORE')">(profilo approvatore)</span>
+                <span class="tenue" sec:authorize="hasRole('OPERATORE') and !hasRole('APPROVATORE')">(profilo operatore)</span>
+            </span>
+            <form th:action="@{/logout}" method="post"><button type="submit" class="secondario">Esci</button></form>
+        </div>
+    </div>
+</header>
+
+<div th:fragment="messaggi">
+    <div class="messaggio conferma" role="status" th:if="${conferma}" th:text="${conferma}">Fatto.</div>
+    <div class="messaggio errore" role="alert" th:if="${errore}">
+        <span th:text="${errore}">Errore</span>
+        <ul th:if="${violazioni}">
+            <li th:each="v : ${violazioni}"><strong th:text="${v.etichetta}">Campo</strong>:
+                <span th:text="${v.messaggio}">messaggio</span></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Stato con lo stesso codice cromatico ovunque: rosso per ciò che non è ancora trasmesso. -->
+<span th:fragment="stato(valore)" class="stato" th:classappend="'stato-' + ${valore}"
+      th:text="${#strings.replace(#strings.capitalize(#strings.toLowerCase(valore)), '_', ' ')}">Stato</span>
+
+<!-- Grandezze di una valutazione di significatività (regole R1-R8 e categorie IS). -->
+<div th:fragment="valutazione(v, servizi)">
+    <div class="campo">
+        <label for="servizioCoinvolto" class="obbligatorio">Servizio coinvolto</label>
+        <select id="servizioCoinvolto" name="servizioCoinvolto">
+            <option value="">Scegli il servizio</option>
+            <option th:each="s : ${servizi}" th:value="${s.servizio}" th:selected="${s.servizio == v.servizioCoinvolto}"
+                    th:text="${s.servizio + ' (SL: ' + s.maxIndisponibilitaMinuti + ' min indisponibilità, '
+                    + s.maxDegradoMinuti + ' min degrado; ' + s.utentiUe + ' utenti' + (s.servizioGestito ? ', servizio gestito' : '') + ')'}">SOC</option>
+        </select>
+        <div class="aiuto">Livelli di servizio attesi definiti dal soggetto (misura DE.CM-01). Le regole R1-R4 valgono solo per i servizi gestiti.</div>
+    </div>
+    <div class="griglia">
+        <div class="campo">
+            <label for="minutiIndisponibilitaTotale">Indisponibilità totale (minuti)</label>
+            <input id="minutiIndisponibilitaTotale" name="minutiIndisponibilitaTotale" type="number" min="0" th:value="${v.minutiIndisponibilitaTotale}">
+        </div>
+        <div class="campo">
+            <label for="minutiDegrado">Degrado del servizio (minuti)</label>
+            <input id="minutiDegrado" name="minutiDegrado" type="number" min="0" th:value="${v.minutiDegrado}">
+        </div>
+        <div class="campo">
+            <label for="utentiImpattati">Utenti impattati</label>
+            <input id="utentiImpattati" name="utentiImpattati" type="number" min="0" th:value="${v.utentiImpattati}">
+            <div class="aiuto">Se il numero non è noto, la stima del massimo possibile (Reg. 2024/2690, considerando 32).</div>
+        </div>
+    </div>
+    <fieldset>
+        <legend>Dati e accessi</legend>
+        <div class="griglia">
+            <label class="scelta"><input type="checkbox" name="perditaRiservatezza" value="true" th:checked="${v.perditaRiservatezza}"> Perdita di riservatezza</label>
+            <label class="scelta"><input type="checkbox" name="perditaIntegrita" value="true" th:checked="${v.perditaIntegrita}"> Perdita di integrità</label>
+            <label class="scelta"><input type="checkbox" name="perditaAutenticita" value="true" th:checked="${v.perditaAutenticita}"> Perdita di autenticità</label>
+            <label class="scelta"><input type="checkbox" name="impattoEsterno" value="true" th:checked="${v.impattoEsterno}"> Effetti verso l'esterno</label>
+            <label class="scelta"><input type="checkbox" name="sospettoDoloso" value="true" th:checked="${v.sospettoDoloso}"> Si sospetta un'azione malevola</label>
+            <label class="scelta"><input type="checkbox" name="accessoNonAutorizzato" value="true" th:checked="${v.accessoNonAutorizzato}"> Accesso non autorizzato</label>
+            <label class="scelta"><input type="checkbox" name="gravePerturbazione" value="true" th:checked="${v.gravePerturbazione}"> In grado di causare gravi perturbazioni operative</label>
+            <label class="scelta"><input type="checkbox" name="esfiltrazioneSegretiCommerciali" value="true" th:checked="${v.esfiltrazioneSegretiCommerciali}"> Esfiltrazione, anche potenziale, di segreti commerciali</label>
+            <label class="scelta"><input type="checkbox" name="interruzioneProgrammata" value="true" th:checked="${v.interruzioneProgrammata}"> Interruzione programmata (manutenzione)</label>
+        </div>
+    </fieldset>
+    <fieldset>
+        <legend>Perdite economiche</legend>
+        <div class="griglia">
+            <div class="campo">
+                <label for="perditaDiretta">Perdita diretta, anche potenziale (euro)</label>
+                <input id="perditaDiretta" name="perditaDiretta" type="number" min="0" step="0.01" th:value="${v.perditaDiretta}">
+            </div>
+            <div class="campo">
+                <label for="incidentiStessaCausaInFinestra">Incidenti con la stessa causa (6 mesi)</label>
+                <input id="incidentiStessaCausaInFinestra" name="incidentiStessaCausaInFinestra" type="number" min="0" th:value="${v.incidentiStessaCausaInFinestra}">
+            </div>
+            <div class="campo">
+                <label for="perditeCumulateInFinestra">Perdite cumulate di quegli incidenti (euro)</label>
+                <input id="perditeCumulateInFinestra" name="perditeCumulateInFinestra" type="number" min="0" step="0.01" th:value="${v.perditeCumulateInFinestra}">
+            </div>
+        </div>
+    </fieldset>
+</div>
+
+<!-- Selettore delle voci: solo i valori (livello VALORE), raggruppati per macrocategoria e predicato. -->
+<div th:fragment="voci(valori, selezionate, abilitato)" class="voci">
+    <div class="voci-testa">
+        <label class="tenue piccolo" for="filtro-voci" style="font-weight:400;margin:0">Cerca una voce</label>
+        <input type="search" id="filtro-voci" placeholder="codice o nome, es. ransomware" th:disabled="${!abilitato}">
+        <span class="piccolo"><span data-conta th:text="${#lists.size(selezionate)}">0</span> voci scelte</span>
+    </div>
+    <div class="voci-testa scelte-correnti" aria-live="polite">
+        <code th:each="c : ${selezionate}" th:text="${c}">BC:IM_AV</code>
+    </div>
+    <div class="voci-elenco">
+        <th:block th:each="g : ${@vociRaggruppate.raggruppa(valori)}">
+            <details th:open="${g.contiene(selezionate)}">
+                <summary><span th:text="${g.macrocategoria}">Macrocategoria</span>
+                    <span class="tenue piccolo" th:text="'(' + ${#lists.size(g.valori)} + ')'"></span></summary>
+                <th:block th:each="p : ${g.predicati}">
+                    <div class="predicato" th:text="${p.nome}">Predicato</div>
+                    <label class="scelta" th:each="val : ${p.valori}" th:title="${val.descrizione}">
+                        <input type="checkbox" name="voci" th:value="${val.codice}" th:checked="${#lists.contains(selezionate, val.codice)}"
+                               th:disabled="${!abilitato}">
+                        <span><code th:text="${val.codice}">BC:IM_AV</code> <span th:text="${val.nome}">Nome</span></span>
+                    </label>
+                </th:block>
+            </details>
+        </th:block>
+    </div>
+</div>
+
+<!-- Valore di un campo del documento in sola lettura. -->
+<th:block th:fragment="valore(c, nome)" th:switch="${nome}">
+    <span th:case="'categorieIs'">
+        <code th:each="x : ${c.categorieIs}" th:text="${x.codice} + ' '" th:title="${x.descrizione}">IS-3</code>
+        <span class="tenue" th:if="${#lists.isEmpty(c.categorieIs)}">nessuna</span></span>
+    <span th:case="'criteriRegolamento'">
+        <code th:each="x : ${c.criteriRegolamento}" th:text="${x.name()} + ' '" th:title="${x.descrizione + ' (' + x.fonte + ')'}">R1</code>
+        <span class="tenue" th:if="${#lists.isEmpty(c.criteriRegolamento)}">nessuno</span></span>
+    <span th:case="'serviziImpattati'" th:text="${#strings.listJoin(c.serviziImpattati, ', ')}"></span>
+    <span th:case="'attoIllegittimoOMalevolo'" th:text="${c.attoIllegittimoOMalevolo == null ? '' : (c.attoIllegittimoOMalevolo.name() == 'SI' ? 'Sì' : (c.attoIllegittimoOMalevolo.name() == 'NO' ? 'No' : 'Non noto'))}"></span>
+    <span th:case="'impattoTransfrontaliero'" th:text="${c.impattoTransfrontaliero == null ? '' : (c.impattoTransfrontaliero.name() == 'SI' ? 'Sì' : (c.impattoTransfrontaliero.name() == 'NO' ? 'No' : 'Non noto'))}"></span>
+    <span th:case="'indicatoriCompromissione'">
+        <span th:each="i : ${c.indicatoriCompromissione}" class="mono" style="display:block"
+              th:text="${i.tipo + ' ' + i.valore + (i.nota == null ? '' : ' (' + i.nota + ')')}"></span></span>
+    <span th:case="'conclusioneGestioneIl'" th:text="${c.conclusioneGestioneIl == null ? 'non registrata' : @fmt.data(c.conclusioneGestioneIl)}"></span>
+    <span th:case="'riclassificazioni'">
+        <span class="tenue" th:if="${#lists.isEmpty(c.riclassificazioni)}">nessuna</span>
+        <span th:each="r : ${c.riclassificazioni}" style="display:block;margin-bottom:.4rem">
+            <strong th:text="${@fmt.data(r.registrataIl)}"></strong>:
+            <span th:text="${(r.significativoPrima ? 'significativo' : 'non significativo') + ' → ' + (r.significativoDopo ? 'significativo' : 'non significativo')}"></span><br>
+            prima <code th:text="${#strings.listJoin(r.vociPrima, ' ')}"></code>
+            <th:block th:unless="${#lists.isEmpty(r.categorieIsPrima)}">(<span th:text="${#strings.replace(#strings.listJoin(r.categorieIsPrima, ' '), '_', '-')}"></span>)</th:block><br>
+            dopo <code th:text="${#strings.listJoin(r.vociDopo, ' ')}"></code>
+            <th:block th:unless="${#lists.isEmpty(r.categorieIsDopo)}">(<span th:text="${#strings.replace(#strings.listJoin(r.categorieIsDopo, ' '), '_', '-')}"></span>)</th:block><br>
+            <span th:text="${r.motivazione}"></span>
+            <span class="tenue" th:if="${r.riferimentoDocumentoPrima}" th:text="'(dopo ' + ${r.riferimentoDocumentoPrima} + ')'"></span>
+        </span></span>
+    <span th:case="*" style="white-space:pre-line" th:text="${c['__${nome}__']}"></span>
+</th:block>
+
+</body>
+</html>

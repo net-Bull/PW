@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{interfaccia/frammenti :: testa('Registra incidente')}"></head>
+<body th:attr="data-adesso=${@fmt.adesso()}">
+<header th:replace="~{interfaccia/frammenti :: barra('nuovo')}"></header>
+<main>
+    <div th:replace="~{interfaccia/frammenti :: messaggi}"></div>
+    <h1>Registra incidente</h1>
+    <p class="tenue">Registra l'evento appena rilevato. Il passo successivo è la valutazione di significatività: i termini
+        di notifica decorrono dalla conoscenza dell'incidente significativo, non dalla rilevazione.</p>
+    <form class="foglio" th:action="@{/incidenti}" method="post">
+        <div class="campo">
+            <label for="titolo" class="obbligatorio">Titolo</label>
+            <input type="text" id="titolo" name="titolo" maxlength="255" required th:value="${titolo}"
+                   placeholder="es. Console SOC/MDR irraggiungibile">
+        </div>
+        <div class="campo">
+            <label for="descrizione" class="obbligatorio">Descrizione</label>
+            <textarea id="descrizione" name="descrizione" maxlength="4000" required th:text="${descrizione}"
+                      placeholder="Cosa è stato osservato, da quale sistema, chi lo ha segnalato"></textarea>
+        </div>
+        <div class="campo">
+            <label for="rilevatoIl" class="obbligatorio">Rilevato il</label>
+            <input type="datetime-local" id="rilevatoIl" name="rilevatoIl" required th:value="${adesso}">
+            <div class="aiuto">Primo evento osservato, ora italiana.</div>
+        </div>
+        <div class="azioni">
+            <button type="submit">Registra e valuta</button>
+            <a th:href="@{/incidenti}">Annulla</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

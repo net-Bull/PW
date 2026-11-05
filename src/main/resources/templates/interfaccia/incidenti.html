@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{interfaccia/frammenti :: testa('Incidenti')}"></head>
+<body th:attr="data-adesso=${@fmt.adesso()}">
+<header th:replace="~{interfaccia/frammenti :: barra('incidenti')}"></header>
+<main>
+    <div th:replace="~{interfaccia/frammenti :: messaggi}"></div>
+    <div class="testata">
+        <div class="titolo">
+            <h1>Incidenti</h1>
+            <p class="tenue">Ordinati per rilevazione, dal più recente. La colonna del termine mostra il prossimo invio dovuto al CSIRT Italia.</p>
+        </div>
+        <a class="pulsante" th:href="@{/incidenti/nuovo}" sec:authorize="hasAnyRole('OPERATORE','APPROVATORE')">Registra incidente</a>
+    </div>
+
+    <div class="vuoto" th:if="${#lists.isEmpty(incidenti)}">
+        <p><strong>Nessun incidente registrato.</strong></p>
+        <p>Registra un evento appena rilevato: la valutazione di significatività dirà se fa sorgere obblighi di notifica.</p>
+    </div>
+
+    <div class="tabella-scorre" th:unless="${#lists.isEmpty(incidenti)}">
+        <table>
+            <thead>
+            <tr><th>Codice</th><th>Titolo</th><th>Stato</th><th>Rilevato</th><th>Conoscenza</th><th>Prossimo termine</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="i : ${incidenti}">
+                <td class="mono"><a th:href="@{/incidenti/{id}(id=${i.id})}" th:text="${i.codice}">INC-2026-0001</a></td>
+                <td th:text="${i.titolo}">Titolo</td>
+                <td><span th:replace="~{interfaccia/frammenti :: stato(${i.stato.name()})}"></span></td>
+                <td class="numero" th:text="${@fmt.data(i.rilevatoIl)}"></td>
+                <td class="numero" th:text="${@fmt.data(i.conoscenzaIl)}"></td>
+                <td>
+                    <th:block th:if="${i.prossimaScadenza}" th:with="s=${i.prossimaScadenza}">
+                        <strong th:text="${s.tipo.etichetta}">Pre-notifica</strong>
+                        <span class="numero" th:text="'entro ' + ${@fmt.data(s.dovutaEntro)}"></span><br>
+                        <span th:class="'termine-' + ${s.stato}" th:attr="data-termine=${s.dovutaEntro}"
+                              th:text="${@fmt.residuo(s.dovutaEntro)}">mancano 3 h</span>
+                    </th:block>
+                    <span class="tenue" th:unless="${i.prossimaScadenza}">nessuno</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{interfaccia/frammenti :: testa('Valutazione di significatività')}"></head>
+<body th:attr="data-adesso=${@fmt.adesso()}">
+<header th:replace="~{interfaccia/frammenti :: barra('incidenti')}"></header>
+<main>
+    <div th:replace="~{interfaccia/frammenti :: messaggi}"></div>
+    <div class="testata">
+        <div class="titolo">
+            <div class="codice"><a th:href="@{/incidenti/{id}(id=${inc.id})}" th:text="${inc.codice}">INC</a></div>
+            <h1>Valutazione di significatività</h1>
+            <p th:text="${inc.titolo}">Titolo</p>
+        </div>
+        <span th:replace="~{interfaccia/frammenti :: stato(${inc.stato.name()})}"></span>
+    </div>
+
+    <div class="messaggio" th:if="${inc.stato.name() != 'IN_VALUTAZIONE' and inc.stato.name() != 'NON_SIGNIFICATIVO'}">
+        L'incidente è già qualificato. Per cambiarne la qualificazione usa la
+        <a th:href="@{/incidenti/{id}/riclassificazione(id=${inc.id})}">riclassificazione</a>, che resta tracciata.
+    </div>
+
+    <form class="foglio" th:action="@{/incidenti/{id}/qualificazione(id=${inc.id})}" method="post"
+          th:if="${inc.stato.name() == 'IN_VALUTAZIONE' or inc.stato.name() == 'NON_SIGNIFICATIVO'}">
+        <p>Inserisci le grandezze note. È significativo se scatta almeno una regola del Reg. (UE) 2024/2690 (R1-R8) o
+            una categoria IS dell'ACN; confronti strettamente maggiori della soglia.</p>
+        <div th:replace="~{interfaccia/frammenti :: valutazione(${valutazione}, ${servizi})}"></div>
+
+        <fieldset th:if="${inc.conoscenzaIl == null}">
+            <legend>Momento della conoscenza</legend>
+            <p class="piccolo">Serve solo se la valutazione risulta significativa. Si registra una sola volta e non si modifica: è l'istante da cui decorrono le 24 e le 72 ore.
+                È il momento in cui, dopo la valutazione iniziale, c'è ragionevole certezza di un incidente
+                significativo (Reg. 2024/2690, considerando 31).</p>
+            <div class="griglia">
+                <div class="campo">
+                    <label for="conoscenzaIl">Conoscenza il</label>
+                    <input type="datetime-local" id="conoscenzaIl" name="conoscenzaIl" th:value="${adesso}">
+                </div>
+            </div>
+            <div class="campo">
+                <label for="motivazioneConoscenza">Evidenza che fonda la conoscenza (obbligatoria se l'incidente risulta significativo)</label>
+                <textarea id="motivazioneConoscenza" name="motivazioneConoscenza" maxlength="2000"
+                          th:text="${motivazioneConoscenza}"
+                          placeholder="es. console irraggiungibile da 45 minuti, confermato dal monitoraggio di disponibilità"></textarea>
+            </div>
+        </fieldset>
+        <p class="piccolo" th:if="${inc.conoscenzaIl != null}">
+            Conoscenza già registrata il <strong th:text="${@fmt.data(inc.conoscenzaIl)}"></strong>: se l'incidente torna
+            significativo, i termini decorrono da quel momento.</p>
+
+        <div class="azioni">
+            <button type="submit">Valuta</button>
+            <a th:href="@{/incidenti/{id}(id=${inc.id})}">Torna all'incidente</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

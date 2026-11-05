@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="it">
+<!--
+  Template di stampa dei documenti verso il CSIRT Italia, impaginato come un modulo amministrativo:
+  testata a tre riquadri, quadri A-F, caselle numerate, stato con caselle di spunta (ADR-0008).
+  Bianco e nero; il rosso compare solo su bozze e documenti in approvazione (filigrana e timbro), così una
+  copia non trasmessa non si confonde con quella conforme. Lo stato resta leggibile anche senza colore.
+  Deve restare XHTML ben formato: openhtmltopdf lo legge come XML (tag chiusi, nessuna entità HTML come &nbsp;;
+  niente doppio trattino basso nei testi, che Thymeleaf interpreta come preelaborazione).
+  Modello: v = VistaStampa (documento strutturato + valori formattati).
+-->
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${v.titolo}">Documento</title>
+    <meta name="subject" th:content="${v.doc.adempimento.etichetta + ' - ' + v.doc.adempimento.riferimentoNormativo}"/>
+    <meta name="author" th:content="${v.doc.soggetto.denominazione}"/>
+    <meta name="keywords" content="NIS2, D.Lgs. 138/2024, CSIRT Italia, notifica incidente"/>
+    <style>
+        @page {
+            size: A4;
+            margin: 11mm 11mm 15mm 11mm;
+            @bottom-left { content: element(piede); width: 78%; vertical-align: top; }
+            @bottom-right {
+                content: "Foglio " counter(page) " di " counter(pages);
+                font-family: 'Liberation Sans', 'DejaVu Sans'; font-size: 7pt; width: 22%; text-align: right; vertical-align: top;
+            }
+        }
+        body { font-family: 'Liberation Sans', 'DejaVu Sans'; font-size: 8.5pt; line-height: 1.22; color: #000000; }
+        .piede { position: running(piede); font-size: 6.5pt; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        td, th { vertical-align: top; text-align: left; }
+        .et { font-size: 5.8pt; text-transform: uppercase; letter-spacing: 0.25pt; margin-bottom: 1.5pt; }
+        .et b { font-size: 6.2pt; margin-right: 2pt; }
+        .v { font-size: 9pt; }
+        .v-forte { font-size: 10.5pt; font-weight: bold; }
+
+        .testata td { border: 1.2pt solid #000000; padding: 3pt 4pt 4pt 4pt; }
+        .testata .modello { font-size: 15pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4pt; margin: 1pt 0; }
+        .testata .codice-modello { font-size: 7pt; margin-top: 2pt; }
+        .testata td.riservato { background-color: #ececec; }
+
+        .stato { border: 1.2pt solid #000000; border-top: none; }
+        .stato td { padding: 3pt 4pt; font-size: 7.5pt; text-transform: uppercase; }
+        .casella { display: inline-block; width: 7pt; height: 7pt; border: 0.8pt solid #000000; text-align: center;
+                   font-size: 6.5pt; line-height: 7pt; font-weight: bold; margin: 0 2pt 0 8pt; }
+        .stato .dettaglio { text-transform: none; font-size: 7pt; }
+
+        .rettifica { border: 1.2pt solid #000000; border-top: none; padding: 3pt 4pt; font-size: 8pt; }
+
+        .quadro { margin-top: 5pt; }
+        .titolo-quadro td { background-color: #000000; color: #ffffff; font-weight: bold; font-size: 7.6pt;
+                            text-transform: uppercase; letter-spacing: 0.7pt; padding: 2.2pt 4pt; }
+        .titolo-quadro td.lettera { background-color: #ffffff; color: #000000; border: 1.2pt solid #000000;
+                                    width: 15pt; text-align: center; font-size: 9pt; padding: 1pt 0; }
+        .tq { page-break-after: avoid; -fs-page-break-min-height: 3cm; margin: 0; }
+        .griglia td { border: 0.6pt solid #000000; padding: 2pt 4pt 3pt 4pt; }
+        .griglia td.n { width: 17pt; text-align: center; background-color: #ececec; font-size: 6.5pt; font-weight: bold; }
+        .griglia .obbl { font-size: 5.2pt; font-weight: normal; display: block; margin-top: 1pt; }
+        .griglia th { border: 0.6pt solid #000000; background-color: #ececec; font-size: 5.8pt; font-weight: normal;
+                      text-transform: uppercase; letter-spacing: 0.25pt; padding: 2pt 4pt; }
+        tr { page-break-inside: avoid; }
+        .linea { margin: 0 0 1pt 0; }
+        .mono { font-family: 'Liberation Mono', 'DejaVu Sans'; font-size: 8.4pt; letter-spacing: 0.2pt; }
+        .avvertenze { margin-top: 6pt; font-size: 6.6pt; line-height: 1.3; }
+        .avvertenze b { text-transform: uppercase; letter-spacing: 0.4pt; }
+        .avvertenze .indirizzo { white-space: nowrap; }
+        .filigrana { position: fixed; top: 105mm; left: 18mm; width: 175mm; text-align: center;
+                     transform: rotate(-32deg); -fs-transform-origin: center; font-size: 64pt; font-weight: bold;
+                     letter-spacing: 6pt; color: #f2d4d4; z-index: -1; }
+        .timbro { display: inline-block; border: 1.6pt solid #a01c1c; color: #a01c1c; font-weight: bold; padding: 1pt 5pt;
+                  letter-spacing: 1pt; margin-left: 10pt; font-size: 7.5pt; white-space: nowrap; }
+    </style>
+</head>
+<body th:with="cod=${v.doc.adempimento.tipo.name() == 'PRE_NOTIFICA' ? 'PN' : (v.doc.adempimento.tipo.name() == 'NOTIFICA' ? 'NT' : (v.doc.adempimento.tipo.name() == 'RELAZIONE_FINALE' ? 'RF' : (v.doc.adempimento.tipo.name() == 'RELAZIONE_MENSILE' ? 'RM' : 'RI')))}">
+
+<div class="filigrana" th:if="${v.classeBanda != 'trasmesso'}" th:text="${v.classeBanda == 'bozza' ? 'BOZZA' : 'NON TRASMESSO'}">BOZZA</div>
+
+<div class="piede">
+    <span th:text="${'Mod. PW29/' + cod + ' - ' + v.doc.incidente.codice + ' - ' + v.doc.adempimento.etichetta + ' n. '
+        + v.doc.adempimento.progressivo + ', versione ' + v.doc.versione.numero + ' (id ' + v.doc.versione.id + ')'
+        + ' - generato il ' + v.generatoIl + ' da ' + v.doc.generatoDa}">piede</span>
+</div>
+
+<table class="testata">
+    <tr>
+        <td style="width: 38%">
+            <div class="et">Soggetto notificante</div>
+            <div class="v-forte" th:text="${v.doc.soggetto.denominazione}">soggetto</div>
+            <div class="v" th:text="${'C.F. ' + v.doc.soggetto.codiceFiscale}">cf</div>
+        </td>
+        <td style="width: 36%">
+            <div class="et">Modello</div>
+            <div class="modello" th:text="${v.doc.adempimento.etichetta}">Notifica</div>
+            <div class="v" th:text="${v.doc.adempimento.riferimentoNormativo}">art.</div>
+            <div class="codice-modello" th:text="${'Mod. PW29/' + cod + ' - incidente ' + v.doc.incidente.codice}">codice</div>
+        </td>
+        <td class="riservato" style="width: 26%">
+            <div class="et">Spazio riservato - destinatario</div>
+            <div class="v" th:text="${v.doc.destinatario.nome}">CSIRT</div>
+            <div class="et" style="margin-top: 3pt">Riferimento del portale</div>
+            <div class="v" th:text="${v.doc.trasmissione != null ? v.doc.trasmissione.riferimentoPortale : '(non ancora trasmesso)'}">rif</div>
+        </td>
+    </tr>
+</table>
+<table class="stato">
+    <tr>
+        <td>
+            <span style="font-weight: bold">Stato del documento</span>
+            <span class="casella" th:text="${v.classeBanda == 'trasmesso' ? 'X' : ''}"></span>Trasmesso
+            <span class="casella" th:text="${v.classeBanda == 'approvazione' ? 'X' : ''}"></span>In approvazione
+            <span class="casella" th:text="${v.classeBanda == 'bozza' ? 'X' : ''}"></span>Bozza
+            <span class="timbro" th:if="${v.classeBanda != 'trasmesso'}">NON TRASMETTERE</span>
+            <div class="dettaglio" th:text="${v.banda}">dettaglio</div>
+        </td>
+    </tr>
+</table>
+<div class="rettifica" th:if="${v.doc.versione.motivoRettifica != null}">
+    <b th:text="${'Rettifica della versione ' + v.doc.versione.rettificaDellaVersione + ' già trasmessa. '}">Rettifica</b>
+    <span th:text="${'Motivo: ' + v.doc.versione.motivoRettifica}"></span>
+</div>
+
+<div class="quadro">
+    <div class="tq"><table class="titolo-quadro"><tr><td class="lettera">A</td><td>Soggetto notificante</td></tr></table></div>
+    <table class="griglia">
+        <tr>
+            <td colspan="4"><div class="et"><b>A1</b>Denominazione</div><div class="v" th:text="${v.doc.soggetto.denominazione}">-</div></td>
+            <td colspan="2"><div class="et"><b>A2</b>Codice fiscale</div><div class="v" th:text="${v.doc.soggetto.codiceFiscale}">-</div></td>
+        </tr>
+        <tr>
+            <td colspan="2"><div class="et"><b>A3</b>Qualifica NIS</div>
+                <div class="v" th:text="${v.doc.soggetto.tipo.name() == 'ESSENZIALE' ? 'Soggetto essenziale' : 'Soggetto importante'}">-</div></td>
+            <td colspan="4"><div class="et"><b>A4</b>Settore e tipologia</div><div class="v" th:text="${v.doc.soggetto.settore}">-</div></td>
+        </tr>
+    </table>
+</div>
+
+<div class="quadro">
+    <div class="tq"><table class="titolo-quadro"><tr><td class="lettera">B</td><td>Incidente</td></tr></table></div>
+    <table class="griglia">
+        <tr>
+            <td colspan="2"><div class="et"><b>B1</b>Codice incidente</div><div class="v" th:text="${v.doc.incidente.codice}">-</div></td>
+            <td colspan="4"><div class="et"><b>B2</b>Titolo</div><div class="v" th:text="${v.doc.incidente.titolo}">-</div></td>
+        </tr>
+        <tr>
+            <td colspan="2"><div class="et"><b>B3</b>Primo evento rilevato</div><div class="v" th:text="${v.rilevatoIl}">-</div></td>
+            <td colspan="2"><div class="et"><b>B4</b>Conoscenza (decorrenza 24 h e 72 h)</div><div class="v" th:text="${v.conoscenzaIl}">-</div></td>
+            <td colspan="2"><div class="et"><b>B5</b><span th:text="${v.doc.trasmissione != null ? 'Stato all''invio' : 'Stato attuale'}">Stato</span></div>
+                <div class="v" th:text="${v.statoIncidente}">-</div></td>
+        </tr>
+    </table>
+</div>
+
+<div class="quadro">
+    <div class="tq"><table class="titolo-quadro"><tr><td class="lettera">C</td>
+        <td th:text="${'Contenuto - ' + v.doc.adempimento.etichetta}">Contenuto</td></tr></table></div>
+    <table class="griglia">
+        <tr th:each="c, s : ${v.campi}">
+            <td class="n"><span th:text="${'C' + s.count}">C1</span><span class="obbl" th:if="${c.obbligatorio}">OBBL.</span></td>
+            <td>
+                <div class="et" th:text="${c.etichetta}">campo</div>
+                <div class="v"><div class="linea" th:each="l : ${c.linee}" th:text="${l}">valore</div></div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="quadro">
+    <div class="tq"><table class="titolo-quadro"><tr><td class="lettera">D</td><td>Classificazione - Tassonomia Cyber ACN</td></tr></table></div>
+    <table class="griglia">
+        <tr>
+            <td colspan="2"><div class="et"><b>D1</b>Tassonomia</div><div class="v" th:text="${v.doc.classificazione.tassonomia}">-</div></td>
+            <td colspan="2"><div class="et"><b>D2</b>Versione del documento ACN</div><div class="v" th:text="${v.doc.classificazione.versioneDocumento}">-</div></td>
+            <td colspan="2"><div class="et"><b>D3</b>Acquisita il</div>
+                <div class="v" th:text="${#temporals.format(v.doc.classificazione.dataAcquisizione, 'dd/MM/yyyy')}">-</div></td>
+        </tr>
+    </table>
+    <table class="griglia" th:if="${!v.doc.classificazione.voci.isEmpty()}">
+        <tr><th style="width: 17pt">N.</th><th style="width: 20%">Codice</th><th style="width: 22%">Valore</th><th>Percorso</th></tr>
+        <tr th:each="x, s : ${v.doc.classificazione.voci}">
+            <td class="n" th:text="${'D' + (s.count + 3)}">D4</td>
+            <td class="v" th:text="${x.codice}">BC:SE_ME</td>
+            <td class="v" th:text="${x.nome}">Medium</td>
+            <td th:text="${x.percorso}">percorso</td>
+        </tr>
+    </table>
+</div>
+
+<div class="quadro" th:if="${!v.riclassificazioni.isEmpty()}">
+    <div class="tq"><table class="titolo-quadro"><tr><td class="lettera">E</td><td>Riclassificazioni successive a invii precedenti</td></tr></table></div>
+    <table class="griglia">
+        <tr><th style="width: 17pt">N.</th><th style="width: 19%">Momento</th><th style="width: 22%">Prima</th><th style="width: 26%">Dopo</th><th>Motivazione</th></tr>
+        <tr th:each="r, s : ${v.riclassificazioni}">
+            <td class="n" th:text="${'E' + s.count}">E1</td>
+            <td><div class="linea" th:text="${r.registrataIl}">data</div>
+                <div class="linea" th:text="${'Ultimo invio: ' + r.riferimentoDocumentoPrima}">rif</div></td>
+            <td th:text="${r.vociPrima}">voci prima</td>
+            <td><div class="linea" th:text="${r.vociDopo}">voci dopo</div>
+                <div class="linea" th:text="${'Significatività: ' + r.significativita}">sig</div>
+                <div class="linea" th:text="${'Categorie IS: ' + r.categorie}">cat</div></td>
+            <td th:text="${r.motivazione}">motivazione</td>
+        </tr>
+    </table>
+</div>
+
+<div class="quadro">
+    <div class="tq"><table class="titolo-quadro"><tr><td class="lettera">F</td><td>Redazione, approvazione e integrità</td></tr></table></div>
+    <table class="griglia">
+        <tr>
+            <td colspan="2"><div class="et"><b>F1</b>Versione</div>
+                <div class="v" th:text="${v.doc.versione.numero + ' (id ' + v.doc.versione.id + ') - ' + v.doc.versione.stato
+                    + (v.doc.versione.derivataDa != null ? ', da v. ' + v.doc.versione.derivataDa : '')}">-</div></td>
+            <td colspan="2"><div class="et"><b>F2</b>Redatta da</div><div class="v" th:text="${v.doc.versione.creataDa}">-</div></td>
+            <td colspan="2"><div class="et"><b>F3</b>Inviata in approvazione da</div>
+                <div class="v" th:text="${v.doc.versione.inviataApprovazioneDa != null ? v.doc.versione.inviataApprovazioneDa : '-'}">-</div></td>
+        </tr>
+        <tr th:if="${v.doc.trasmissione != null}">
+            <td colspan="2"><div class="et"><b>F4</b>Approvata e trasmessa da</div><div class="v" th:text="${v.doc.trasmissione.approvataDa}">-</div></td>
+            <td colspan="2"><div class="et"><b>F5</b>Trasmessa il</div><div class="v" th:text="${v.trasmessaIl}">-</div></td>
+            <td colspan="2"><div class="et"><b>F6</b>Riferimento del portale</div><div class="v" th:text="${v.doc.trasmissione.riferimentoPortale}">-</div></td>
+        </tr>
+        <tr th:if="${v.doc.catena.impronta != null}">
+            <td colspan="6"><div class="et"><b>F7</b>Impronta SHA-256 del documento</div>
+                <div class="mono"><th:block th:each="i : ${#numbers.sequence(0, 7)}"><span
+                    th:text="${#strings.substring(v.doc.catena.impronta, i * 8, i * 8 + 8) + (i lt 7 ? '  ' : '')}">0000</span></th:block></div></td>
+        </tr>
+        <tr th:if="${v.doc.catena.improntaPrecedente != null}">
+            <td colspan="6"><div class="et"><b>F8</b><span th:text="${v.doc.trasmissione != null ? 'Anello precedente della catena' : 'Ultimo documento trasmesso (impronta)'}">Anello</span></div>
+                <div class="mono"><th:block th:each="i : ${#numbers.sequence(0, 7)}"><span
+                    th:text="${#strings.substring(v.doc.catena.improntaPrecedente, i * 8, i * 8 + 8) + (i lt 7 ? '  ' : '')}">0000</span></th:block></div></td>
+        </tr>
+    </table>
+</div>
+
+<div class="avvertenze">
+    <b>Avvertenze.</b>
+    <span>OBBL.: campo obbligatorio (matrice campo/adempimento, art. 25, c. 5, D.Lgs. 138/2024).</span>
+    <th:block th:with="c=${v.doc.destinatario.canale}">
+        <th:block th:if="${#strings.contains(c, 'https://')}"><span th:text="${'Trasmissione: ' + #strings.substringBefore(c, 'https://')}">canale</span><span
+            class="indirizzo" th:text="${'https://' + #strings.substringAfter(c, 'https://') + '.'}">url</span></th:block>
+        <span th:unless="${#strings.contains(c, 'https://')}" th:text="${'Trasmissione: ' + c + '.'}">canale</span>
+    </th:block>
+    <span th:text="${'Catena ' + v.doc.catena.algoritmo + ': ogni invio include l''impronta del precedente; '
+        + 'verifica: GET /api/incidenti/{id}/catena.'}">nota</span>
+</div>
+
+</body>
+</html>

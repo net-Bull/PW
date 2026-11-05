@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<!--
+  Pagina d'errore per gli errori che non passano dai controller dell'interfaccia (filtri di sicurezza, risorse
+  inesistenti fuori dalle pagine): sostituisce la pagina predefinita di Spring Boot. Non mostra dettagli tecnici.
+-->
+<head th:replace="~{interfaccia/frammenti :: testa('Errore')}"></head>
+<body>
+<main class="accesso">
+    <div class="foglio">
+        <h1 th:switch="${status}">
+            <span th:case="403">Operazione non consentita</span>
+            <span th:case="404">Pagina non trovata</span>
+            <span th:case="*">Si è verificato un errore</span>
+        </h1>
+        <p th:switch="${status}">
+            <span th:case="403">La richiesta è stata rifiutata dai controlli di sicurezza. Se la pagina era aperta da
+                tempo, ricaricala o accedi di nuovo prima di ripetere l'operazione.</span>
+            <span th:case="404">La pagina richiesta non esiste.</span>
+            <span th:case="*">L'errore è stato registrato. Riprova; se si ripete, segnalalo con l'ora indicata sotto.</span>
+        </p>
+        <p class="tenue piccolo">Codice <span th:text="${status}">500</span>,
+            <span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy HH:mm:ss')}">ora</span></p>
+        <p><a th:href="@{/incidenti}">Torna all'elenco degli incidenti</a> · <a th:href="@{/login}">Accesso</a></p>
+    </div>
+</main>
+</body>
+</html>

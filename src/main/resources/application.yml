@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: notifiche-csirt
+  datasource:
+    url: jdbc:h2:mem:notifiche;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    # db/migration: schema e dati comuni; db/vendor/{vendor}: migrazioni specifiche del database
+    # (su PostgreSQL i trigger di immutabilità); db/demo: utenti dimostrativi, solo nel profilo predefinito
+    # (H2, sviluppo e test) e nel profilo "demo". Il profilo "postgres" da solo non li carica.
+    locations: classpath:db/migration,classpath:db/vendor/{vendor},classpath:db/demo
+  thymeleaf:
+    cache: true
+
+server:
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        # Il cookie di sessione dell'interfaccia non viaggia su richieste originate da altri siti (ADR-0009).
+        same-site: strict
+        http-only: true
+
+notifiche:
+  interfaccia:
+    # Mostra nella pagina di accesso le credenziali dimostrative: vero solo dove si caricano gli utenti demo.
+    credenziali-demo: true
+  # Fuso del soggetto: termini a mesi (relazione finale e mensili), date dei documenti, anno del codice
+  # incidente, data di riferimento delle soglie.
+  fuso-orario: Europe/Rome
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/notifiche}
+    username: ${DB_USER:notifiche}
+    password: ${DB_PASSWORD:notifiche}
+  flyway:
+    locations: classpath:db/migration,classpath:db/vendor/{vendor}
+    # Un database creato quando gli utenti demo si caricavano sempre ha la migrazione ripetibile già
+    # applicata: senza la location db/demo non deve far fallire la validazione.
+    ignore-migration-patterns: "*:future,repeatable:missing"
+notifiche:
+  interfaccia:
+    credenziali-demo: false
+
+---
+# Utenti dimostrativi con password pubblicate nel README: da usare solo per prove (es. postgres,demo).
+spring:
+  config:
+    activate:
+      on-profile: demo
+  flyway:
+    locations: classpath:db/migration,classpath:db/vendor/{vendor},classpath:db/demo
+notifiche:
+  interfaccia:
+    credenziali-demo: true

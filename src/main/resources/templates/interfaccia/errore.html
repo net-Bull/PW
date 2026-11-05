@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{interfaccia/frammenti :: testa(${titolo})}"></head>
+<body th:attr="data-adesso=${@fmt.adesso()}">
+<header th:replace="~{interfaccia/frammenti :: barra('')}"></header>
+<main>
+    <h1 th:text="${titolo}">Non trovato</h1>
+    <p th:text="${messaggio}">La risorsa richiesta non esiste.</p>
+    <p><a th:href="@{/incidenti}">Torna all'elenco degli incidenti</a></p>
+</main>
+</body>
+</html>

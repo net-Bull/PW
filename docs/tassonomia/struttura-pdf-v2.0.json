@@ -1,0 +1,30 @@
+{
+  "_nota": "Elementi della TC-ACN v2.0 presenti solo nel PDF ufficiale e assenti dal JSON MISP: macrocategorie (cap. 3) e sotto-predicati di Involved Asset (par. 3.4.3, didascalie delle figure 20-38).",
+  "macrocategorie": [
+    {"codice": "BC", "nome": "Baseline Characterization", "sezione": "3.1"},
+    {"codice": "TT", "nome": "Threat Type", "sezione": "3.2"},
+    {"codice": "TA", "nome": "Threat Actor", "sezione": "3.3"},
+    {"codice": "AC", "nome": "Additional Context", "sezione": "3.4"}
+  ],
+  "sottopredicati_involved_asset": [
+    {"codice": "HW-ND", "nome": "Hardware – Network Device"},
+    {"codice": "HW-IT", "nome": "Hardware – IoT/IIoT"},
+    {"codice": "HW-SA", "nome": "Hardware – Security Appliance"},
+    {"codice": "HW-CS", "nome": "Hardware – Computer System"},
+    {"codice": "HW-OT", "nome": "Hardware – OT"},
+    {"codice": "HW-OH", "nome": "Hardware – Other"},
+    {"codice": "HW-VI", "nome": "Hardware – Virtualization Infrastructure"},
+    {"codice": "SW-SS", "nome": "Software – Security System"},
+    {"codice": "SW-DM", "nome": "Software – Data Management"},
+    {"codice": "SW-OT", "nome": "Software – OT"},
+    {"codice": "SW-OS", "nome": "Software – Operating System"},
+    {"codice": "SW-VS", "nome": "Software – Virtualization Software"},
+    {"codice": "SW-IT", "nome": "Software – IoT/IIoT"},
+    {"codice": "SW-AP", "nome": "Software – Application"},
+    {"codice": "SW-OH", "nome": "Software – Other"},
+    {"codice": "IT", "nome": "Information Type"},
+    {"codice": "PE", "nome": "People"},
+    {"codice": "LO", "nome": "Location"},
+    {"codice": "OT", "nome": "Other"}
+  ]
+}

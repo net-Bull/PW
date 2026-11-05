@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{interfaccia/frammenti :: testa('Accesso')}"></head>
+<body th:attr="data-adesso=${@fmt.adesso()}">
+<main class="accesso">
+    <div class="foglio">
+        <h1>Notifiche di incidente al CSIRT Italia</h1>
+        <p class="tenue">Redazione e gestione delle notifiche di CyberWall S.r.l. (D.Lgs. 138/2024, art. 25).</p>
+        <div class="messaggio errore" role="alert" th:if="${param.error}">Nome utente o password non corretti.</div>
+        <div class="messaggio conferma" role="status" th:if="${param.uscita}">Sei uscito dall'applicazione.</div>
+        <div class="messaggio errore" role="alert" th:if="${param.scaduta}">La sessione è scaduta per inattività:
+            il modulo che stavi inviando non è stato salvato. Accedi di nuovo e ripeti l'operazione.</div>
+        <form th:action="@{/login}" method="post">
+            <div class="campo">
+                <label for="username">Nome utente</label>
+                <input type="text" id="username" name="username" autocomplete="username" required autofocus>
+            </div>
+            <div class="campo">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit">Accedi</button>
+        </form>
+    </div>
+    <div class="foglio piccolo" th:if="${credenzialiDemo}">
+        <p><strong>Ambiente dimostrativo.</strong> Utenti di prova, con dati fittizi:</p>
+        <table>
+            <thead><tr><th>Utente</th><th>Password</th><th>Profilo</th></tr></thead>
+            <tbody>
+            <tr><td class="mono">operatore</td><td class="mono">Operatore-Demo-2026</td><td>redige e invia in approvazione</td></tr>
+            <tr><td class="mono">approvatore</td><td class="mono">Approvatore-Demo-2026</td><td>approva e registra la trasmissione</td></tr>
+            <tr><td class="mono">operatore2</td><td class="mono">Operatore2-Demo-2026</td><td>secondo operatore</td></tr>
+            <tr><td class="mono">approvatore2</td><td class="mono">Approvatore2-Demo-2026</td><td>secondo approvatore</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>
