@@ -1,0 +1,107 @@
+{
+  "schema" : "pw29-documento-csirt/2",
+  "destinatario" : {
+    "nome" : "CSIRT Italia - Agenzia per la cybersicurezza nazionale",
+    "canale" : "Servizi NIS del Portale dei Servizi ACN, https://portale.acn.gov.it/"
+  },
+  "adempimento" : {
+    "tipo" : "RELAZIONE_FINALE",
+    "etichetta" : "Relazione finale",
+    "riferimentoNormativo" : "art. 25, c. 5, lett. d) ed e) D.Lgs. 138/2024",
+    "progressivo" : 1
+  },
+  "soggetto" : {
+    "denominazione" : "CyberWall S.r.l.",
+    "codiceFiscale" : "00000000000",
+    "tipo" : "IMPORTANTE",
+    "settore" : "Gestione dei servizi TIC (B2B) - fornitore di servizi di sicurezza gestiti (Allegato I)"
+  },
+  "incidente" : {
+    "codice" : "INC-2026-0001",
+    "titolo" : "Console SOC/MDR irraggiungibile per 45 minuti",
+    "stato" : "SIGNIFICATIVO",
+    "rilevatoIl" : "2026-11-02T07:10:00Z",
+    "conoscenzaIl" : "2026-11-02T07:50:00Z",
+    "conclusioneGestioneIl" : "2026-11-22T10:00:00Z"
+  },
+  "versione" : {
+    "id" : 3,
+    "numero" : 1,
+    "stato" : "TRASMESSO",
+    "derivataDa" : 2,
+    "creataIl" : "2026-11-05T10:00:00Z",
+    "creataDa" : "operatore",
+    "inviataApprovazioneDa" : "operatore",
+    "approvataDa" : "approvatore"
+  },
+  "classificazione" : {
+    "tassonomia" : "TC-ACN-2.0",
+    "versioneDocumento" : "2.0",
+    "dataAcquisizione" : "2026-10-21",
+    "voci" : [ {
+      "codice" : "BC:IM_AV",
+      "nome" : "Availability",
+      "percorso" : "Baseline Characterization > Impact > Availability"
+    }, {
+      "codice" : "BC:IM_DX",
+      "nome" : "Data Exfiltration",
+      "percorso" : "Baseline Characterization > Impact > Data Exfiltration"
+    }, {
+      "codice" : "BC:RO_MA",
+      "nome" : "Malicious Actions",
+      "percorso" : "Baseline Characterization > Root Cause > Malicious Actions"
+    }, {
+      "codice" : "BC:SE_HI",
+      "nome" : "High",
+      "percorso" : "Baseline Characterization > Severity > High"
+    }, {
+      "codice" : "TT:AV_DA",
+      "nome" : "Data Encryption",
+      "percorso" : "Threat Type > Availability > Data Encryption"
+    }, {
+      "codice" : "TT:MA_RA",
+      "nome" : "Ransomware",
+      "percorso" : "Threat Type > Malicious Code > Ransomware"
+    } ]
+  },
+  "contenuto" : {
+    "descrizioneSintetica" : "Console SOC/MDR irraggiungibile per 45 minuti",
+    "referenteNome" : "Referente CSIRT (fittizio)",
+    "referenteEmail" : "csirt@cyberwall.example",
+    "referenteTelefono" : "+39 089 84 80 90",
+    "categorieIs" : [ "IS_1", "IS_3" ],
+    "criteriRegolamento" : [ "R1", "R3", "R4" ],
+    "serviziImpattati" : [ "SOC_MDR" ],
+    "attoIllegittimoOMalevolo" : "SI",
+    "impattoTransfrontaliero" : "NO",
+    "utentiImpattati" : 9000,
+    "descrizioneDettagliata" : "Cifratura dei datastore dell'hypervisor del cluster SOC da parte di un ransomware: console SOC/MDR non disponibile per 45 minuti per tutti i 140 clienti (9.000 utenti), servizio ripristinato dal sito secondario. Esfiltrazione preventiva degli archivi di log di 38 clienti (circa 2.400 utenti), con indirizzi IP, nomi host e account dei loro sistemi monitorati. Gravità alta",
+    "minacciaOCausaOriginale" : "Ransomware distribuito tramite credenziali VPN compromesse di un fornitore di manutenzione, prive di autenticazione multifattore",
+    "misureAttenuazione" : "Isolamento del cluster, ripristino da backup immutabili, revoca e rotazione delle credenziali, MFA su tutti gli accessi VPN di terze parti, comunicazione ai 38 clienti interessati (art. 25, c. 9, D.Lgs. 138/2024)",
+    "conclusioneGestioneIl" : "2026-11-22T10:00:00Z",
+    "riclassificazioni" : [ {
+      "registrataIl" : "2026-11-07T10:00:00Z",
+      "motivazione" : "L'analisi forense dell'hypervisor ha accertato la cifratura dei datastore da parte di un ransomware e l'esfiltrazione preventiva degli archivi di log di 38 dei 140 clienti (circa 2.400 utenti del servizio): non si tratta di un guasto",
+      "significativoPrima" : true,
+      "significativoDopo" : true,
+      "categorieIsPrima" : [ "IS_3" ],
+      "categorieIsDopo" : [ "IS_1", "IS_3" ],
+      "vociPrima" : [ "BC:IM_AV", "BC:RO_SY", "BC:SE_ME", "TT:AV_OU" ],
+      "vociDopo" : [ "BC:IM_AV", "BC:IM_DX", "BC:RO_MA", "BC:SE_HI", "TT:AV_DA", "TT:MA_RA" ],
+      "riferimentoDocumentoPrima" : "ACN-M3-02"
+    } ]
+  },
+  "trasmissione" : {
+    "trasmessaIl" : "2026-11-22T11:00:00Z",
+    "riferimentoPortale" : "ACN-M3-03",
+    "approvataDa" : "approvatore",
+    "registrataIl" : "2026-11-22T11:00:00Z"
+  },
+  "catena" : {
+    "algoritmo" : "SHA-256 (pw29-catena-v2)",
+    "improntaPrecedente" : "bdfe597fbd39451fe199e217792fae238e48a65b4fabf8b551a4ba6ad719863f",
+    "impronta" : "256cd3cbf9e19c88705dab4d247fbe6995794782d0fa1eb965f206829facc00e"
+  },
+  "generatoIl" : "2026-11-22T11:00:00Z",
+  "generatoDa" : "operatore"
+}

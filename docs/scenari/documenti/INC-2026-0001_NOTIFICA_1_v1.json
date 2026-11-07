@@ -1,0 +1,84 @@
+{
+  "schema" : "pw29-documento-csirt/2",
+  "destinatario" : {
+    "nome" : "CSIRT Italia - Agenzia per la cybersicurezza nazionale",
+    "canale" : "Servizi NIS del Portale dei Servizi ACN, https://portale.acn.gov.it/"
+  },
+  "adempimento" : {
+    "tipo" : "NOTIFICA",
+    "etichetta" : "Notifica",
+    "riferimentoNormativo" : "art. 25, c. 5, lett. b) D.Lgs. 138/2024",
+    "progressivo" : 1
+  },
+  "soggetto" : {
+    "denominazione" : "CyberWall S.r.l.",
+    "codiceFiscale" : "00000000000",
+    "tipo" : "IMPORTANTE",
+    "settore" : "Gestione dei servizi TIC (B2B) - fornitore di servizi di sicurezza gestiti (Allegato I)"
+  },
+  "incidente" : {
+    "codice" : "INC-2026-0001",
+    "titolo" : "Console SOC/MDR irraggiungibile per 45 minuti",
+    "stato" : "SIGNIFICATIVO",
+    "rilevatoIl" : "2026-11-02T07:10:00Z",
+    "conoscenzaIl" : "2026-11-02T07:50:00Z"
+  },
+  "versione" : {
+    "id" : 2,
+    "numero" : 1,
+    "stato" : "TRASMESSO",
+    "derivataDa" : 1,
+    "creataIl" : "2026-11-02T09:00:00Z",
+    "creataDa" : "operatore",
+    "inviataApprovazioneDa" : "operatore",
+    "approvataDa" : "approvatore"
+  },
+  "classificazione" : {
+    "tassonomia" : "TC-ACN-2.0",
+    "versioneDocumento" : "2.0",
+    "dataAcquisizione" : "2026-10-21",
+    "voci" : [ {
+      "codice" : "BC:IM_AV",
+      "nome" : "Availability",
+      "percorso" : "Baseline Characterization > Impact > Availability"
+    }, {
+      "codice" : "BC:RO_SY",
+      "nome" : "System Failure",
+      "percorso" : "Baseline Characterization > Root Cause > System Failure"
+    }, {
+      "codice" : "BC:SE_ME",
+      "nome" : "Medium",
+      "percorso" : "Baseline Characterization > Severity > Medium"
+    }, {
+      "codice" : "TT:AV_OU",
+      "nome" : "Outage",
+      "percorso" : "Threat Type > Availability > Outage"
+    } ]
+  },
+  "contenuto" : {
+    "descrizioneSintetica" : "Console SOC/MDR irraggiungibile per 45 minuti",
+    "referenteNome" : "Referente CSIRT (fittizio)",
+    "referenteEmail" : "csirt@cyberwall.example",
+    "referenteTelefono" : "+39 089 84 80 90",
+    "categorieIs" : [ "IS_3" ],
+    "criteriRegolamento" : [ "R1" ],
+    "serviziImpattati" : [ "SOC_MDR" ],
+    "attoIllegittimoOMalevolo" : "NON_NOTO",
+    "impattoTransfrontaliero" : "NON_NOTO",
+    "valutazioneIniziale" : "Gravità media: console SOC/MDR non disponibile per 45 minuti, monitoraggio sospeso per tutti i 140 clienti (9.000 utenti del servizio)",
+    "utentiImpattati" : 9000
+  },
+  "trasmissione" : {
+    "trasmessaIl" : "2026-11-02T10:00:00Z",
+    "riferimentoPortale" : "ACN-M3-02",
+    "approvataDa" : "approvatore",
+    "registrataIl" : "2026-11-02T10:00:00Z"
+  },
+  "catena" : {
+    "algoritmo" : "SHA-256 (pw29-catena-v2)",
+    "improntaPrecedente" : "d949c633e2bb65010b00f07e521f7e0c25961212fd031ffedf8e3548a1bd8b21",
+    "impronta" : "bdfe597fbd39451fe199e217792fae238e48a65b4fabf8b551a4ba6ad719863f"
+  },
+  "generatoIl" : "2026-11-22T11:00:00Z",
+  "generatoDa" : "operatore"
+}
