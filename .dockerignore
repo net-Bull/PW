@@ -1,0 +1,3 @@
+# Al contesto della build serve solo il jar.
+*
+!target/notifiche-csirt-0.1.0-SNAPSHOT.jar

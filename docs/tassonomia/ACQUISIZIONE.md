@@ -24,7 +24,8 @@ La traccia chiede la tassonomia vigente alla data di consegna: la verifica si ri
 | 21/10/2026 | Acquisizione del PDF e del JSON MISP | v2.0, impronte registrate sopra |
 | 21/10/2026 | Controllo: PDF riscaricato dalla pagina ACN (browser), JSON MISP riscaricato da GitHub | Impronte identiche, Last-Modified invariato: v2.0 vigente |
 | 23/10/2026 | Copia allegata al repository dalla cartella di download | SHA-256 identico al registro |
-| entro l'08/11/2026 | Nuova verifica prima del caricamento dell'elaborato | da ripetere |
+| 07/11/2026 | Verifica prima del caricamento: PDF riscaricato dalla pagina ACN (4.528.595 byte, Last-Modified 04/11/2025), JSON MISP riscaricato da GitHub (219 valori, 21 predicati) | Impronte identiche al registro: v2.0 vigente |
+| 08/11/2026 | Stessa verifica, ripetuta | Esito invariato: v2.0 vigente |
 
 ## Contenuto dichiarato dal documento (cap. 3, p. 11)
 
